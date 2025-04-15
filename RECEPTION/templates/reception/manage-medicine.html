@@ -1,0 +1,573 @@
+ {% extends 'reception/base.html' %}
+    {% block title %}Pharmaceutical Medicine Management{% endblock %}
+    {% block extra_css %}
+    <style>
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"], select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.delete {
+            background-color: #e74c3c;
+        }
+        button.delete:hover {
+            background-color: #c0392b;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            height: 80px;
+        }
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .pagination button {
+            padding: 5px 10px;
+        }
+        .pagination button.active {
+            background-color: #2c3e50;
+        }
+    </style>{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Pharmaceutical Medicine Management</h1>
+        
+        <div class="toolbar">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search medicines...">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="antibiotic">Antibiotic</option>
+                    <option value="analgesic">Analgesic</option>
+                    <option value="antiviral">Antiviral</option>
+                    <option value="antihistamine">Antihistamine</option>
+                    <option value="antiseptic">Antiseptic</option>
+                </select>
+                <button onclick="searchMedicines()">Search</button>
+            </div>
+            <button onclick="openModal()">Add New Medicine</button>
+        </div>
+        
+        <table id="medicinesTable">
+            <thead>
+                <tr>
+                    <th>Medicine Name</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Batch Number</th>
+                    <th>Quantity</th>
+                    <th>Unit Price (₹)</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="medicinesTableBody">
+                <!-- Table data will be populated here -->
+            </tbody>
+        </table>
+        
+        <div class="pagination" id="pagination">
+            <!-- Pagination buttons will be added here -->
+        </div>
+        
+        <!-- Add/Edit Medicine Modal -->
+        <div id="medicineModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2 id="modalTitle">Add New Medicine</h2>
+                <form id="medicineForm">
+                    <input type="hidden" id="medicineId">
+                    
+                    <div class="form-group">
+                        <label for="medicineName">Medicine Name*</label>
+                        <input type="text" id="medicineName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="medicineType">Medicine Type*</label>
+                        <select id="medicineType" required>
+                            <option value="capsule">Capsule</option>
+                            <option value="tablet">Tablet</option>
+                            <option value="syrup">Syrup</option>
+                            <option value="injection">Injection</option>
+                            <option value="cream">Cream</option>
+                            <option value="ointment">Ointment</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="supplier">Supplier*</label>
+                        <select id="supplier" required>
+                            <!-- Supplier options will be populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="category">Category*</label>
+                        <select id="category" required>
+                            <option value="painkiller">Painkiller</option>
+                            <option value="antibiotic">Antibiotic</option>
+                            <option value="antiseptic">Antiseptic</option>
+                            <option value="anesthetic">Anesthetic</option>
+                            <option value="other">Other</option>                      
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="batchNumber">Batch Number*</label>
+                        <input type="text" id="batchNumber" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quantityInStock">Quantity in Stock*</label>
+                        <input type="number" id="quantityInStock" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reorderLevel">Reorder Level*</label>
+                        <input type="number" id="reorderLevel" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unitPrice">Unit Price (₹)*</label>
+                        <input type="number" id="unitPrice" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiryDate">Expiry Date*</label>
+                        <input type="date" id="expiryDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storageInstructions">Storage Instructions</label>
+                        <textarea id="storageInstructions"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" id="isActive" name="isActive" value="True" readonly>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" onclick="closeModal()">Cancel</button>
+                        <button type="submit">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content" style="width: 40%;">
+                <span class="close" onclick="closeDeleteModal()">&times;</span>
+                <h2>Confirm Delete</h2>
+                <p>Are you sure you want to delete this medicine?</p>
+                <div class="form-buttons">
+                    <button type="button" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="button" class="delete" onclick="confirmDelete()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+
+
+    // Global variables
+let medicines = [];
+let currentPage = 1;
+const itemsPerPage = 10;
+let medicineToDelete = null;
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    loadMedicines();
+    loadSuppliers();
+    
+    // Set up form submission handler
+    document.getElementById('medicineForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveMedicine();
+    });
+});
+
+// Function to load suppliers
+function loadSuppliers() {
+        $.ajax({
+            url: "/superadmin/supplier_data/", // Ensure this endpoint returns JSON data
+            method: "GET",
+            success: function (data) {
+                console.log('Data received from server (loadSuppliers):', data);
+                let supplierDropdown = $('#supplier');
+                supplierDropdown.empty(); // Clear existing options
+                supplierDropdown.append('<option value="">Select Supplier</option>'); // Add placeholder
+                $.each(data, function (index, supplier) {
+                    supplierDropdown.append(`<option value="${supplier.id}">${supplier.name}</option>`);
+                });
+                
+                // Restore selected supplier if it exists
+                let selectedSupplierId = "{{ inventory_item.supplier.id }}";
+                if (selectedSupplierId) {
+                    supplierDropdown.val(selectedSupplierId); // Set selected value
+                    supplierDropdown.find('option[value=""]').remove(); // Remove placeholder after selection
+                }
+            },
+            error: function () {
+                alert("Error fetching suppliers.");
+            }
+        });
+    }
+
+// Function to populate supplier dropdown
+function populateSupplierDropdown(suppliers) {
+    const supplierSelect = document.getElementById('supplier');
+    supplierSelect.innerHTML = ''; // Clear existing options
+    
+    suppliers.forEach(supplier => {
+        const option = document.createElement('option');
+        option.value = supplier.id;
+        option.textContent = supplier.name; // Assuming supplier has a 'name' field
+        supplierSelect.appendChild(option);
+    });
+}
+
+// Fetch medicines from API
+function loadMedicines() {
+    fetch('/reception/pharmaceuticals/')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Data received from server (loadMedicines):', data);
+            medicines = data;
+            displayMedicines();
+            setupPagination();
+        })
+        .catch(error => console.error('Error loading medicines:', error));
+}
+
+// Display medicines in the table
+function displayMedicines() {
+    const tableBody = document.getElementById('medicinesTableBody');
+    tableBody.innerHTML = '';
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentMedicines = medicines.slice(startIndex, endIndex);
+    
+    currentMedicines.forEach(medicine => {
+        const row = document.createElement('tr');
+        
+        // Format date for display
+        const expiryDate = new Date(medicine.expiry_date).toLocaleDateString();
+        
+        row.innerHTML = `
+            <td>${medicine.medicine_name}</td>
+            <td>${capitalizeFirstLetter(medicine.medicine_type)}</td>
+            <td>${capitalizeFirstLetter(medicine.category)}</td>
+            <td>${medicine.batch_number}</td>
+            <td>${medicine.quantity_in_stock}</td>
+            <td>${typeof medicine.unit_price === 'number' ? medicine.unit_price.toFixed(2) : medicine.unit_price}</td>
+            <td>${expiryDate}</td>
+            <td class="action-buttons">
+                <button onclick="editMedicine(${medicine.id})">Edit</button>
+                <button class="delete" onclick="openDeleteModal(${medicine.id})">Delete</button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Set up pagination buttons
+function setupPagination() {
+    const paginationDiv = document.getElementById('pagination');
+    paginationDiv.innerHTML = '';
+    
+    const totalPages = Math.ceil(medicines.length / itemsPerPage);
+    
+    for (let i = 1; i <= totalPages; i++) {
+        const button = document.createElement('button');
+        button.innerText = i;
+        if (i === currentPage) {
+            button.classList.add('active');
+        }
+        button.addEventListener('click', function() {
+            currentPage = i;
+            displayMedicines();
+            setupPagination();
+        });
+        paginationDiv.appendChild(button);
+    }
+}
+
+// Search medicines based on input and category filter
+function searchMedicines() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    
+    fetch('/reception/pharmaceuticals/')
+        .then(response => response.json())
+        .then(data => {
+            medicines = data.filter(medicine => {
+                const matchesSearch = medicine.medicine_name.toLowerCase().includes(searchTerm) || 
+                                     medicine.batch_number.toLowerCase().includes(searchTerm);
+                const matchesCategory = categoryFilter === '' || medicine.category === categoryFilter;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            currentPage = 1;
+            displayMedicines();
+            setupPagination();
+        })
+        .catch(error => console.error('Error searching medicines:', error));
+}
+
+// Open modal for adding a new medicine
+function openModal() {
+    document.getElementById('modalTitle').innerText = 'Add New Medicine';
+    document.getElementById('medicineForm').reset();
+    document.getElementById('medicineId').value = '';
+    
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('expiryDate').valueAsDate = tomorrow;
+    
+    document.getElementById('medicineModal').style.display = 'block';
+}
+
+// Close the medicine modal
+function closeModal() {
+    document.getElementById('medicineModal').style.display = 'none';
+}
+
+// Open modal for editing a medicine
+function editMedicine(id) {
+    const medicine = medicines.find(m => m.id === id);
+    if (!medicine) return;
+    
+    document.getElementById('modalTitle').innerText = 'Edit Medicine';
+    document.getElementById('medicineId').value = medicine.id;
+    document.getElementById('medicineName').value = medicine.medicine_name;
+    document.getElementById('medicineType').value = medicine.medicine_type;
+    document.getElementById('supplier').value = medicine.supplier;
+    document.getElementById('category').value = medicine.category;
+    document.getElementById('batchNumber').value = medicine.batch_number;
+    document.getElementById('quantityInStock').value = medicine.quantity_in_stock;
+    document.getElementById('reorderLevel').value = medicine.reorder_level;
+    document.getElementById('unitPrice').value = medicine.unit_price;
+    document.getElementById('expiryDate').value = medicine.expiry_date;
+    document.getElementById('storageInstructions').value = medicine.storage_instructions || '';
+    document.getElementById('isActive').value.toLowerCase() === 'true'
+    
+    document.getElementById('medicineModal').style.display = 'block';
+}
+
+// Save or update a medicine
+function saveMedicine() {
+    const medicineId = document.getElementById('medicineId').value;
+    const isEdit = medicineId !== '';
+    
+    const medicineData = {
+        medicine_name: document.getElementById('medicineName').value,
+        medicine_type: document.getElementById('medicineType').value,
+        supplier: document.getElementById('supplier').value,
+        category: document.getElementById('category').value,
+        batch_number: document.getElementById('batchNumber').value,
+        quantity_in_stock: parseInt(document.getElementById('quantityInStock').value),
+        reorder_level: parseInt(document.getElementById('reorderLevel').value),
+        unit_price: parseFloat(document.getElementById('unitPrice').value),
+        expiry_date: document.getElementById('expiryDate').value,
+        storage_instructions: document.getElementById('storageInstructions').value,
+        is_active: document.getElementById('isActive').value.toLowerCase() === 'true'
+    };
+    
+    const url = isEdit 
+        ? `/reception/pharmaceuticals/${medicineId}/`
+        : '/reception/pharmaceuticals/';
+    
+    const method = isEdit ? 'PUT' : 'POST';
+    console.log('Data being sent to server (saveMedicine):', medicineData);
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(medicineData)   
+    })
+    
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(JSON.stringify(data));
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response received from server (saveMedicine):', data);
+        closeModal();
+        loadMedicines();
+    })
+    .catch(error => {
+        console.error('Error saving medicine:', error);
+        alert('Error saving medicine. Please check the form and try again.');
+    });
+}
+
+// Open delete confirmation modal
+function openDeleteModal(id) {
+    medicineToDelete = id;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+// Close delete confirmation modal
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    medicineToDelete = null;
+}
+
+// Delete a medicine after confirmation
+function confirmDelete() {
+    if (medicineToDelete === null) return;
+    
+    fetch(`/reception/pharmaceuticals/${medicineToDelete}/`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        closeDeleteModal();
+        loadMedicines();
+    })
+    .catch(error => {
+        console.error('Error deleting medicine:', error);
+        alert('Error deleting medicine. Please try again.');
+    });
+}
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Helper function to capitalize first letter
+function capitalizeFirstLetter(string) {
+    if (!string) return ''; // Return empty string if input is null or undefined
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+</script>
+{% endblock %}

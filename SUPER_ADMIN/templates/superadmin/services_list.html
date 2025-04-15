@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Dental Services Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- DataTable CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Dental Services Management</h1>
+    <button class="btn btn-primary my-3" id="addServiceBtn">Add Service</button>
+
+    <table id="servicesTable" class="display table table-striped" style="width:100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Min Rate (INR)</th>
+                <th>Max Rate (INR)</th>
+                <th>Duration (mins)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addServiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addServiceForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Service Name</label>
+                        <input type="text" id="addName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addCategory" class="form-label">Category</label>
+                        <select id="addCategory" class="form-select">
+                            <option value="General">General Dentistry</option>
+                            <option value="Cosmetic">Cosmetic Dentistry</option>
+                            <option value="Restorative">Restorative Dentistry</option>
+                            <option value="Surgical">Oral Surgery</option>
+                            <option value="Orthodontics">Orthodontics</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDescription" class="form-label">Description</label>
+                        <textarea id="addDescription" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addMinRate" class="form-label">Min Rate (INR)</label>
+                        <input type="number" id="addMinRate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addMaxRate" class="form-label">Max Rate (INR)</label>
+                        <input type="number" id="addMaxRate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDuration" class="form-label">Duration (mins)</label>
+                        <input type="number" id="addDuration" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editServiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editServiceForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editServiceId">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Service Name</label>
+                        <input type="text" id="editName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCategory" class="form-label">Category</label>
+                        <select id="editCategory" class="form-select">
+                            <option value="General">General Dentistry</option>
+                            <option value="Cosmetic">Cosmetic Dentistry</option>
+                            <option value="Restorative">Restorative Dentistry</option>
+                            <option value="Surgical">Oral Surgery</option>
+                            <option value="Orthodontics">Orthodontics</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Description</label>
+                        <textarea id="editDescription" class="form-control"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMinRate" class="form-label">Min Rate (INR)</label>
+                        <input type="number" id="editMinRate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMaxRate" class="form-label">Max Rate (INR)</label>
+                        <input type="number" id="editMaxRate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDuration" class="form-label">Duration (mins)</label>
+                        <input type="number" id="editDuration" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+        // Initialize DataTable
+        const table = $('#servicesTable').DataTable({
+            ajax: {
+                url: '/superadmin/services/',
+                dataSrc: ''
+            },
+            columns: [
+                { data: 'id' },
+                { data: 'name' },
+                { data: 'category' },
+                { data: 'description' },
+                { data: 'min_rate' },
+                { data: 'max_rate' },
+                { data: 'duration' },
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        return `
+                            <button class="btn btn-warning btn-sm edit-btn" data-id="${row.id}">Edit</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${row.id}">Delete</button>
+                        `;
+                    }
+                }
+            ]
+        });
+    
+        // Show Add Modal
+        $('#addServiceBtn').click(function () {
+            $('#addServiceForm')[0].reset();
+            $('#addServiceModal').modal('show');
+        });
+    
+        // Handle Edit Button Click
+        $('#servicesTable').on('click', '.edit-btn', function () {
+            const id = $(this).data('id');
+            $.get(`/superadmin/services/${id}/`, function (data) {
+                // Populate the form with fetched data
+                $('#editServiceId').val(id);
+                $('#editName').val(data.name);
+                $('#editCategory').val(data.category);
+                $('#editDescription').val(data.description);
+                $('#editMinRate').val(data.min_rate);
+                $('#editMaxRate').val(data.max_rate);
+                $('#editDuration').val(data.duration);
+                $('#editServiceModal').modal('show');
+            }).fail(function () {
+                alert('Failed to fetch service details. Please try again.');
+            });
+        });
+    
+        // Handle Delete Button Click
+        $('#servicesTable').on('click', '.delete-btn', function () {
+            const id = $(this).data('id');
+            if (confirm('Are you sure you want to delete this service?')) {
+                $.ajax({
+                    url: `/superadmin/services/${id}/`,
+                    type: 'DELETE',
+                    headers: { 'X-CSRFToken': csrftoken },
+                    success: function () {
+                        table.ajax.reload();
+                        alert('Service deleted successfully.');
+                    },
+                    error: function () {
+                        alert('Failed to delete the service. Please try again.');
+                    }
+                });
+            }
+        });
+    
+        // Handle Add Service Form Submission
+        $('#addServiceForm').submit(function (e) {
+            e.preventDefault();
+            const payload = {
+                name: $('#addName').val(),
+                category: $('#addCategory').val(),
+                description: $('#addDescription').val(),
+                min_rate: $('#addMinRate').val(),
+                max_rate: $('#addMaxRate').val(),
+                duration: $('#addDuration').val()
+            };
+            $.ajax({
+                url: '/superadmin/services/',
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function () {
+                    $('#addServiceModal').modal('hide');
+                    table.ajax.reload();
+                    alert('Service added successfully.');
+                },
+                error: function () {
+                    alert('Failed to add the service. Please check your input and try again.');
+                }
+            });
+        });
+    
+        // Handle Edit Service Form Submission
+        $('#editServiceForm').submit(function (e) {
+            e.preventDefault();
+            const id = $('#editServiceId').val();
+            const payload = {
+                name: $('#editName').val(),
+                category: $('#editCategory').val(),
+                description: $('#editDescription').val(),
+                min_rate: $('#editMinRate').val(),
+                max_rate: $('#editMaxRate').val(),
+                duration: $('#editDuration').val()
+            };
+            $.ajax({
+                url: `/superadmin/services/${id}/`,
+                type: 'PUT',
+                headers: { 'X-CSRFToken': csrftoken },
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function () {
+                    $('#editServiceModal').modal('hide');
+                    table.ajax.reload();
+                    alert('Service updated successfully.');
+                },
+                error: function () {
+                    alert('Failed to update the service. Please check your input and try again.');
+                }
+            });
+        });
+    });
+    </script>
+    
+</body>
+</html>

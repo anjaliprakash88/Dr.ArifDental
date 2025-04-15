@@ -1,0 +1,444 @@
+{% extends "reception/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<!-- Include DataTables CSS -->
+<link href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="patient-management-content">
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Patient Management</h2>
+            <!-- Change the button to a link that redirects to the patientsignup page -->
+            <a href="../patientsignup/" class="btn btn-primary">
+                Register New Patient
+            </a>
+        </div>
+
+        <!-- Patient DataTable -->
+        <div class="table-responsive">
+            <table id="patientTable" class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DataTable will populate this -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Edit Patient Modal -->
+        <div class="modal fade" id="editPatientModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Patient</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editPatientForm">
+                            {% csrf_token %}
+                            <input type="hidden" id="edit-patient-id">
+                            <!-- First and Last Name -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" id="edit-firstname" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" id="edit-lastname" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <!-- Phone and Email -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Phone</label>
+                                    <input type="text" id="edit-phone" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" id="edit-email" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <!-- Age and Gender -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Age</label>
+                                    <input type="text" id="edit-age" class="form-control">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Gender</label>
+                                    <select id="edit-gender" class="form-control" required>
+                                        <option value="">Select gender</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="mb-3">
+                                <label class="form-label">Address</label>
+                                <textarea id="edit-address" class="form-control" rows="3"></textarea>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">
+                                    <i class="fas fa-times"></i> Close
+                                </button>
+                                
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include DataTables JS and jsPDF -->
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    // Add this at the top of your script to see if jQuery is available
+console.log("jQuery version:", $.fn.jquery);
+    $(document).ready(function () {
+        const { jsPDF } = window.jspdf;
+        // Initialize DataTable
+        const table = $('#patientTable').DataTable({
+            ajax: {
+                url: '/reception/patients/',
+                dataSrc: ''
+            },
+            columns: [
+                { data: 'id' },
+                { data: 'patient_name' },
+                { data: 'phone' },
+                { data: 'email' },
+                { data: 'age' },
+                { data: 'gender' },
+                { data: 'address' },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `
+                            <button class="btn btn-sm btn-primary edit-btn" data-id="${row.id}">
+                                Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}">
+                                Delete
+                            </button>
+                            <button class="btn btn-sm btn-success idcard-btn" data-id="${row.id}" 
+                                data-name="${row.patient_name}" data-phone="${row.phone}" 
+                                data-email="${row.email}" data-age="${row.age}" 
+                                data-gender="${row.gender}" data-address="${row.address}">
+                                ID Card
+                            </button>
+                        `;
+                    }
+                }
+            ],
+            order: [[0, 'desc']],
+            pageLength: 10,
+            responsive: true
+        });
+
+        // Fetch and populate genders
+        function fetchGenders() {
+            $.ajax({
+                url: "/reception/genders/",
+                type: "GET",
+                success: function (response) {
+                    const genderSelect = $("#edit-gender");
+                    genderSelect.empty().append(`<option value="">Select gender</option>`);
+                    $.each(response, function (key, value) {
+                        genderSelect.append(`<option value="${key}">${value}</option>`);
+                    });
+                }
+            });
+        }
+        fetchGenders();
+
+        // Modify the edit button click handler
+        $('#patientTable').on('click', '.edit-btn', function () {
+            const id = $(this).data('id');
+            console.log("Edit button clicked, ID:", id);
+
+            $.ajax({
+                url: `/reception/patients/${id}/`,
+                type: "GET",
+                headers: {
+                    'Accept': 'application/json'  // Explicitly request JSON
+                },
+                success: function (data) {
+                    console.log("Received patient data:", data);
+                    // Ensure data exists before trying to populate the form
+                    if (data) {
+                        $('#edit-patient-id').val(data.id);
+                        $('#edit-firstname').val(data.first_name);
+                        $('#edit-lastname').val(data.last_name);
+                        $('#edit-phone').val(data.phone);
+                        $('#edit-email').val(data.email);
+                        $('#edit-age').val(data.age);
+                        $('#edit-gender').val(data.gender);
+                        $('#edit-address').val(data.address);
+                        $('#editPatientModal').modal('show');
+                    } else {
+                        alert('No patient data received');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error fetching patient:", error);
+                    alert('Failed to fetch patient details');
+                }
+            });
+        });
+
+        // Save edited patient data
+        $('#editPatientForm').on('submit', function(event) {
+            event.preventDefault();
+            const id = $('#edit-patient-id').val();
+            const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+
+            // Create the data object
+            const data = {
+                first_name: $('#edit-firstname').val(),
+                last_name: $('#edit-lastname').val(),
+                phone: $('#edit-phone').val(),
+                email: $('#edit-email').val(),
+                age: $('#edit-age').val(),
+                gender: $('#edit-gender').val(),
+                address: $('#edit-address').val(),
+            };
+
+            // Add debugging
+            console.log("Sending data:", data);
+            console.log("To URL:", `/reception/patients/${id}/`);
+
+            $.ajax({
+                url: `/reception/patients/${id}/`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                    "Accept": "application/json"
+                },
+                success: function(response) {
+                    console.log("Success response:", response);
+                    $('#editPatientModal').modal('hide');
+                    $('#patientTable').DataTable().ajax.reload();
+                    alert('Patient updated successfully');
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error details:", {
+                        status: status,
+                        error: error,
+                        response: xhr.responseText
+                    });
+                    alert(`Failed to update patient: ${xhr.responseJSON?.error || error}`);
+                }
+            });
+        });
+
+        // Delete patient
+        $('#patientTable').on('click', '.delete-btn', function() {
+            if (confirm('Are you sure you want to delete this patient?')) {
+                const id = $(this).data('id');
+                const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+
+                $.ajax({
+                    url: `/reception/patients/${id}/`,
+                    type: 'DELETE',
+                    headers: { "X-CSRFToken": csrftoken },
+                    success: function() {
+                        table.ajax.reload();
+                        alert('Patient deleted successfully');
+                    },
+                    error: function() {
+                        alert('Failed to delete patient');
+                    }
+                });
+            }
+        });
+
+        // Generate ID Card function
+        function generateIDCard(patient) {
+            const { id, name, phone, email, age, gender, address } = patient;
+
+            // Hospital Information
+            const hospitalName = 'Dr. Arif Multi-Speciality Dental Clinic';
+            const hospitalAddress = 'Kozhinjampara, Palakkad, Kerala, 678555';
+            const hospitalPhone = '+91 1234567890';
+            
+            // Create PDF with ID card dimensions
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: [85, 55] // Standard ID card size
+            });
+
+            // Enhanced color scheme - more professional and medical-themed
+            const primaryColor = [41, 128, 185];    // Professional medical blue
+            const secondaryColor = [245, 248, 250]; // Clean light background
+            const accentColor = [26, 188, 156];     // Teal accent for modern look
+            const darkColor = [44, 62, 80];         // Dark blue/gray for text
+            
+            // Gradient background effect
+            // Create header gradient
+            const width = 85;
+            const height = 55;
+            
+            // Main background
+            doc.setFillColor(...secondaryColor);
+            doc.rect(0, 0, width, height, 'F');
+            
+            // Gradient header effect (manual gradient simulation with multiple rectangles)
+            for (let i = 0; i < 20; i++) {
+                const ratio = i / 20;
+                const r = Math.floor(primaryColor[0] * (1 - ratio));
+                const g = Math.floor(primaryColor[1] * (1 - ratio));
+                const b = Math.floor(primaryColor[2] * (1 - ratio));
+                doc.setFillColor(r, g, b);
+                doc.rect(0, i, width, 1, 'F');
+            }
+
+            // Add an elegant accent strip
+            doc.setFillColor(...accentColor);
+            doc.rect(0, 20, width, 1.5, 'F');
+            
+            // Hospital Logo - Enhanced circular emblem
+            doc.setFillColor(255, 255, 255);
+            doc.circle(75, 10, 7, 'F');
+            doc.setDrawColor(...accentColor);
+            doc.setLineWidth(0.8);
+            doc.circle(75, 10, 7, 'S');
+            
+            // Add a simple cross symbol inside the logo (medical symbol)
+            doc.setDrawColor(...primaryColor);
+            doc.setLineWidth(0.5);
+            doc.line(75, 7, 75, 13);
+            doc.line(72, 10, 78, 10);
+            
+            // Hospital Name - Header with improved font
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(255, 255, 255); // White for contrast
+            doc.text(hospitalName, 5, 8);
+            
+            // Hospital Address - More readable
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.text(hospitalAddress, 5, 12);
+            doc.text(`Phone: ${hospitalPhone}`, 5, 16);
+            
+            // Card Title with more emphasis
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...darkColor); 
+            doc.text('PATIENT ID CARD', 5, 28);
+            
+            // Patient ID with modern design
+            doc.setFillColor(...accentColor);
+            doc.roundedRect(60, 25, 20, 7, 2, 2, 'F'); // More rounded corners
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont('courier', 'bold');  // Monospace font for ID numbers
+            doc.text(`ID: ${id}`, 62, 30);
+            
+            // Patient Information with improved spacing and fonts
+            doc.setTextColor(...darkColor);  // Dark blue/gray for better readability
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            
+            // Left Column - Labels
+            const leftX = 5;
+            const startY = 35;
+            const lineHeight = 5;
+            
+            doc.text("Name:", leftX, startY);
+            doc.text("Age/Gender:", leftX, startY + lineHeight);
+            doc.text("Phone:", leftX, startY + 2 * lineHeight);
+            doc.text("Email:", leftX, startY + 3 * lineHeight);
+            doc.text("Address:", leftX, startY + 4 * lineHeight);
+            
+            // Right Column - Values with better styling
+            const rightX = 25;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(name), rightX, startY);
+            doc.text(`${String(age)} / ${String(gender)}`, rightX, startY + lineHeight);
+            doc.text(String(phone), rightX, startY + 2 * lineHeight);
+            
+            // Handle potentially long email with truncation
+            const emailText = email ? (email.length > 25 ? email.substring(0, 22) + '...' : email) : "";
+            doc.text(String(emailText), rightX, startY + 3 * lineHeight);
+            
+            // Handle multi-line address
+            const addressStr = address ? String(address) : "Not provided";
+            const addressLines = doc.splitTextToSize(addressStr, 55);
+            doc.text(addressLines, rightX, startY + 4 * lineHeight);
+            
+            // Footer with issue date and validity - improved styling
+            const issueDate = new Date().toLocaleDateString();
+            const validUntil = new Date();
+            validUntil.setFullYear(validUntil.getFullYear() + 1);
+            
+            // Add subtle footer background
+            doc.setFillColor(240, 244, 248);  // Very light blue
+            doc.rect(0, 50, width, 5, 'F');
+            
+            doc.setFontSize(6);
+            doc.setTextColor(100, 100, 100); 
+            doc.text(`Issue Date: ${issueDate} | Valid Until: ${validUntil.toLocaleDateString()}`, 5, 53);
+            
+            // Improved QR Code design
+            doc.setDrawColor(...darkColor);
+            doc.setLineWidth(0.2);
+            doc.roundedRect(65, 35, 15, 15, 1, 1, 'S');
+            
+            // Generate and save the PDF
+            doc.save(`Patient_ID_Card_${id}.pdf`);
+            
+            return {
+                success: true,
+                filename: `Patient_ID_Card_${id}.pdf`,
+                message: "ID card generated successfully"
+            };
+        }
+
+        // Handle ID Card button click
+        $('#patientTable').on('click', '.idcard-btn', function () {
+            const patient = {
+                id: $(this).data('id'),
+                name: $(this).data('name'),
+                phone: $(this).data('phone'),
+                email: $(this).data('email'),
+                age: $(this).data('age'),
+                gender: $(this).data('gender'),
+                address: $(this).data('address')
+            };
+
+            generateIDCard(patient);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,406 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Arif's Dental Clinic | Doctor Profile</title>
+    <link rel="icon" type="image/x-icon" sizes="1008x1008" href="{% static 'images/favicon.png' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #87CEEB;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .btn-primary{
+            border:none;
+            background:#1c3342;
+
+        }
+        .profile-card {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .profile-card h2 {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .profile-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .profile-table th, .profile-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .profile-table th {
+            background: #f1f1f1;
+            color: black;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .profile-table td {
+            color: #333;
+            background: #fff;
+        }
+
+        .edit-btn-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .edit-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #333;
+            color: #ffffff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+
+        .edit-btn:hover {
+            background: #555;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+        }
+
+        .modal-header {
+            background: #87CEEB;
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            border: 1px solid #ccc !important;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .btn-primary {
+            color:white;
+            background: #333;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #555;
+        }
+
+        @media (max-width: 768px) {
+            .profile-card {
+                width: 90%;
+            }
+        }
+
+        .sidebar-logo{
+            height:150px;
+            width:150px;
+        }
+    </style>
+</head>
+<body>
+<!--------------- MAIN CONTENT --------------->
+    <div class="content d-flex justify-content-center align-items-center">
+        <div class="card shadow-lg p-4" style="max-width: 1000px; width: 100%;">
+             <div class="d-flex justify-content-between align-items-center m">
+                <h4 class="dashboard-title mb-3"><strong>DOCTOR PROFILE</strong></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            {% if doctors %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Username: </strong> {{ doctors.user.username }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>First Name:</strong> {{ doctors.user.first_name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Last Name:</strong> {{ doctors.user.last_name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Email:</strong> {{ doctors.user.email }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Experience:</strong> {{ doctors.experience_years }} Years
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Qualification:</strong> {{ doctors.qualification }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Phone:</strong> {{ doctors.phone_number }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Branch:</strong> {{ doctors.branch.name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Address:</strong> {{ doctors.address }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Specialization:</strong> {{ doctors.specialization }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Edu. Certificate:</strong><br>
+                            {% if doctors.educational_certificate %}
+                            <img src="{{ doctors.educational_certificate.url }}" alt="Educational Certificate" class="img-fluid" height="100" width="400">
+                            {% endif %}
+                        </div>
+                        </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded text-center" style="background:#d2e3e9">
+                            <strong>Edu. Certificate:</strong><br>
+                            {% if doctors.medical_license %}
+                            <img src="{{ doctors.medical_license.url }}" alt="Medical License" class="img-fluid" height="100" width="400">
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="#" class="btn btn-dark w-100 py-2" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        Edit Profile
+                    </a>
+                </div>
+            {% else %}
+                <p class="text-danger text-center mt-3">Doctor profile not found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                    <button type="button" class="btn-close edit-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="doctor_id" value="{{ doctors.id }}">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">USERNAME</label>
+                                <input type="text" class="form-control" id="edit_username" value="{{ doctors.user.username }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">EMAIL</label>
+                                <input type="email" class="form-control" id="edit_email" value="{{ doctors.user.email }}">
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">FIRST NAME</label>
+                                <input type="text" class="form-control" id="edit_first_name" value="{{ doctors.user.first_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">LAST NAME</label>
+                                <input type="text" class="form-control" id="edit_last_name" value="{{ doctors.user.last_name }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">MOBILE</label>
+                                <input type="text" class="form-control" id="edit_phone_number" value="{{ doctors.phone_number }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">ADDRESS</label>
+                                <textarea class="form-control" id="edit_address" rows="1">{{ doctors.address }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">QUALIFICATION</label>
+                                <input type="text" class="form-control" id="edit_qualification" value="{{ doctors.qualification }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">EXPERIENCE(yr.)</label>
+                                <input type="number" class="form-control" id="edit_experience_years" value="{{ doctors.experience_years }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">SPECIALIZATION</label>
+                                <select class="form-control" id="edit_specialization">
+                                    <option value="{{ doctors.specialization }}"></option>
+                                    <option value="General Dentist" {% if doctors.specialization == "General Dentist" %}selected{% endif %}>General Dentist</option>
+                                    <option value="General Dentist" {% if doctors.specialization == "Pediatric Dentist" %}selected{% endif %}>Pediatric Dentist</option>
+                                    <option value="Orthodontist" {% if doctors.specialization == "Orthodontist" %}selected{% endif %}>Orthodontist</option>
+                                    <option value="Periodontist" {% if doctors.specialization == "Periodontist" %}selected{% endif %}>Periodontist</option>
+                                    <option value="Endodontist" {% if doctors.specialization == "Endodontist" %}selected{% endif %}>Endodontist</option>
+                                    <option value="Endodontist" {% if doctors.specialization == "Oral Pathologist" %}selected{% endif %}>Oral Pathologist</option>
+                                    <option value="Prosthodontist" {% if doctors.specialization == "Prosthodontist" %}selected{% endif %}>Prosthodontist</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">UPLOAD EDU.CERTIFICATE</label>
+                                <input type="file" class="form-control" id="edit_educational_certificate">
+                                {% if doctors.educational_certificate %}
+                                    <small class="text-muted mt-1 d-block">Current File: {{ doctors.educational_certificate.name|cut:'media/' }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">UPLOAD MED.LICENSE</label>
+                                {% if doctors.medical_license %}
+                                <input type="file" class="form-control" id="edit_medical_license">
+                                {% endif %}
+                                    <small class="text-muted mt-1 d-block">Current File: {{ doctors.medical_license.name|cut:'media/' }}</small>
+                            </div>
+                        </div>
+                        <button type="submit" style="border:None;" class="btn btn-dark w-100 py-2" id="saveProfileChanges">
+                            Update
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+<!---------------PROFILE CLOSE BUTTON----------------->
+    $(document).ready(function() {
+        $(".btn-close").on("click", function() {
+            window.location.href = "/doctor/dashboard/";
+        });
+    });
+
+<!---------------EDIT CLOSE BUTTON----------------->
+    $(document).ready(function() {
+        $(".edit-close").on("click", function() {
+            setTimeout(function() {
+                window.location.href = "/doctor/profile/";
+            }, 300);
+        });
+    });
+
+<!---------------PROFILE EDIT----------------->
+    $('#editProfileForm').submit(function (e) {
+        e.preventDefault();
+        var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        var formData = new FormData();
+        formData.append("username", $("#edit_username").val());
+        formData.append("first_name", $("#edit_first_name").val());
+        formData.append("last_name", $("#edit_last_name").val());
+        formData.append("email", $("#edit_email").val());
+        formData.append("phone_number", $("#edit_phone_number").val());
+        formData.append("experience_years", $("#edit_experience_years").val());
+        formData.append("qualification", $("#edit_qualification").val());
+        formData.append("address", $("#edit_address").val());
+        formData.append("specialization", $("#edit_specialization").val());
+
+        var educationalCert = $("#edit_educational_certificate")[0].files[0];
+        if (educationalCert) {
+            formData.append("educational_certificate", educationalCert);
+        }
+        var medicalLicense = $("#edit_medical_license")[0].files[0];
+        if (medicalLicense) {
+            formData.append("medical_license", medicalLicense);
+        }
+        $.ajax({
+            url: "/doctor/profile/",
+            method: "POST",
+            processData: false,
+            contentType: false,
+            headers:
+            {
+                "X-CSRFToken": csrfToken
+            },
+            data: formData,
+            success: function (response)
+            {
+                alert("Doctor Profile updated successfully!");
+                window.location.href = "/doctor/profile/";
+            },
+            error: function (xhr, status, error) {
+            alert("Error updating doctor profile: " + xhr.responseText);
+            }
+        });
+    });
+
+
+<!---------------TOGGLE BUTTON----------------->
+    $(document).ready(function() {
+        $('.toggle-btn').on('click', function() {
+            $('.sidebar').toggleClass('active');
+        });
+    });
+    </script>
+
+</body>
+</html>

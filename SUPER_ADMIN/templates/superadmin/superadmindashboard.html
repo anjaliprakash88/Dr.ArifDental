@@ -1,0 +1,531 @@
+{% extends 'superadmin/base.html' %}
+
+{% block title %}Superadmin Dashboard - Dr. Arif's Dental Clinic{% endblock %}
+
+{% block content %}
+<style>
+    /* Dashboard Styles */
+    .dashboard-container {
+        padding: 20px;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+        background: linear-gradient(135deg, #87CEEB, #B0E0E6);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        color: #2c3e50;
+    }
+
+    .welcome-section h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+
+    .date-time {
+        margin-top: 5px;
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+
+    /* Statistics Cards */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-icon {
+        background: #f0f8ff;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+
+    .stat-icon i {
+        font-size: 1.5rem;
+        color: #5dade2;
+    }
+
+    .stat-content h3 {
+        font-size: 1.8rem;
+        margin: 0;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .stat-content p {
+        margin: 5px 0 0;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .quick-actions h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+        color: #2c3e50;
+        border-bottom: 2px solid #f0f8ff;
+        padding-bottom: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .action-btn {
+        background: #5dade2;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: background 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .action-btn:hover {
+        background: #3498db;
+    }
+
+    .action-btn i {
+        margin-right: 8px;
+    }
+
+    /* Dashboard Sections */
+    .dashboard-sections {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+    }
+
+    .section {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .section-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        background: #f9f9f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-header h3 i {
+        margin-right: 10px;
+        color: #5dade2;
+    }
+
+    .view-all {
+        font-size: 0.8rem;
+        color: #5dade2;
+        text-decoration: none;
+    }
+
+    .view-all:hover {
+        text-decoration: underline;
+    }
+
+    .section-content {
+        padding: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    /* Tables */
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .dashboard-table th, 
+    .dashboard-table td {
+        padding: 10px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+
+    .dashboard-table th {
+        background: #f0f8ff;
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .dashboard-table tr:hover td {
+        background: #f9f9f9;
+    }
+
+    /* Status badges */
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .status-pending {
+        background: #FFF3CD;
+        color: #856404;
+    }
+
+    .status-in_progress {
+        background: #CCE5FF;
+        color: #004085;
+    }
+
+    .status-completed {
+        background: #D4EDDA;
+        color: #155724;
+    }
+
+    .status-delivered {
+        background: #D1ECF1;
+        color: #0C5460;
+    }
+
+    .status-cancelled {
+        background: #F8D7DA;
+        color: #721C24;
+    }
+
+    /* Branch cards */
+    .branch-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+    }
+
+    .branch-card {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #eee;
+    }
+
+    .branch-card h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #2c3e50;
+        font-size: 1rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+
+    .branch-info p {
+        margin: 5px 0;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+
+    .branch-info i {
+        width: 20px;
+        color: #5dade2;
+    }
+
+    .branch-details-btn {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        padding: 8px;
+        background: #5dade2;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: background 0.3s;
+    }
+
+    .branch-details-btn:hover {
+        background: #3498db;
+    }
+
+    /* No data message */
+    .no-data {
+        text-align: center;
+        color: #7f8c8d;
+        font-style: italic;
+        padding: 20px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .stats-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .dashboard-sections {
+            grid-template-columns: 1fr;
+        }
+        
+        .branch-cards {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .branch-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h2>Welcome, {{ request.user.username }}</h2>
+        <p class="date-time">{{ current_date|date:"l, F j, Y" }}</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-hospital"></i></div>
+            <div class="stat-content">
+                <h3>{{ branches_count }}</h3>
+                <p>Branches</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-md"></i></div>
+            <div class="stat-content">
+                <h3>{{ doctors_count }}</h3>
+                <p>Doctors</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+            <div class="stat-content">
+                <h3>{{ receptionists_count }}</h3>
+                <p>Receptionists</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-pills"></i></div>
+            <div class="stat-content">
+                <h3>{{ medicines_count }}</h3>
+                <p>Medicines</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{% url 'branchCreate' %}" class="action-btn">
+                <i class="fas fa-plus-circle"></i> Add Branch
+            </a>
+            <a href="{% url 'Doctor-Create' %}" class="action-btn">
+                <i class="fas fa-plus-circle"></i> Add Doctor
+            </a>
+            <a href="{% url 'receptionCreate' %}" class="action-btn">
+                <i class="fas fa-plus-circle"></i> Add Receptionist
+            </a>
+            <a href="{% url 'supplier_list' %}" class="action-btn">
+                <i class="fas fa-plus-circle"></i> Add Supplier
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="dashboard-sections">
+        <!-- Inventory Alerts -->
+        <div class="section inventory-alerts">
+            <div class="section-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Inventory Alerts</h3>
+                <a href="{% url 'hospital_inventory' %}" class="view-all">View All</a>
+            </div>
+            <div class="section-content">
+                {% if low_stock_items %}
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>In Stock</th>
+                                <th>Reorder Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock_items %}
+                            <tr>
+                                <td>{{ item.item_name }}</td>
+                                <td>{{ item.category }}</td>
+                                <td>{{ item.quantity_in_stock }}</td>
+                                <td>{{ item.reorder_level }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No low stock items currently.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Medicine Alerts -->
+        <div class="section medicine-alerts">
+            <div class="section-header">
+                <h3><i class="fas fa-capsules"></i> Medicine Alerts</h3>
+                <a href="{% url 'medicine-list' %}" class="view-all">View All</a>
+            </div>
+            <div class="section-content">
+                {% if low_stock_medicines %}
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Type</th>
+                                <th>In Stock</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for medicine in low_stock_medicines %}
+                            <tr>
+                                <td>{{ medicine.medicine_name }}</td>
+                                <td>{{ medicine.medicine_type }}</td>
+                                <td>{{ medicine.quantity_in_stock }}</td>
+                                <td>{{ medicine.expiry_date|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No medicine alerts currently.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Lab Orders -->
+        <div class="section recent-orders">
+            <div class="section-header">
+                <h3><i class="fas fa-flask"></i> Recent Lab Orders</h3>
+                <a href="{% url 'lab-orders' %}" class="view-all">View All</a>
+            </div>
+            <div class="section-content">
+                {% if recent_lab_orders %}
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Patient</th>
+                                <th>Lab</th>
+                                <th>Status</th>
+                                <th>Expected Delivery</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_lab_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.patient }}</td>
+                                <td>{{ order.lab_name }}</td>
+                                <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                                <td>{{ order.expected_delivery_date|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No recent lab orders.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Branch Performance -->
+        <div class="section branch-performance">
+            <div class="section-header">
+                <h3><i class="fas fa-chart-line"></i> Branch Performance</h3>
+            </div>
+            <div class="section-content branch-cards">
+                {% if branches %}
+                    {% for branch in branches %}
+                    <div class="branch-card">
+                        <h4>{{ branch.name }}</h4>
+                        <div class="branch-info">
+                            <p><i class="fas fa-user-md"></i> Doctors: {{ branch.doctors.count }}</p>
+                            <p><i class="fas fa-user-tie"></i> Staff: {{ branch.receptionists.count }}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> {{ branch.address|truncatechars:30 }}</p>
+                            <p><i class="fas fa-phone"></i> {{ branch.phone_number }}</p>
+                        </div>
+                        <a href="{% url 'branchdetailview' branch.id %}" class="branch-details-btn">View Details</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-data">No branches available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any dashboard-specific JavaScript here
+        console.log('Dashboard loaded successfully');
+    });
+</script>
+{% endblock %}

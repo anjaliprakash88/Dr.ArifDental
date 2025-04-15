@@ -1,0 +1,401 @@
+{% extends "superadmin/base.html" %}
+
+{% block title %}Hospital Information{% endblock %}
+
+{% block content %}
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Bootstrap JS Bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Hospital Information</h1>
+            
+            <!-- Add New Hospital Form -->
+            <!-- <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Add New Hospital</h5>
+                </div>
+                <div class="card-body">
+                    <form id="hospitalInfoForm" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Hospital Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="established_year" class="form-label">Established Year</label>
+                                <input type="number" class="form-control" id="established_year" name="established_year">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="website" class="form-label">Website</label>
+                            <input type="url" class="form-control" id="website" name="website">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Hospital</button>
+                    </form>
+                </div>
+            </div> -->
+            
+            <!-- Hospital List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5>Hospitals</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Established</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for hospital in hospitals %}
+                                <tr>
+                                    <td>{{ hospital.id }}</td>
+                                    <td>{{ hospital.name }}</td>
+                                    <td>{{ hospital.phone }}</td>
+                                    <td>{{ hospital.email }}</td>
+                                    <td>{{ hospital.established_year }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info view-btn" data-id="{{ hospital.id }}">View</button>
+                                        <button class="btn btn-sm btn-primary edit-btn" data-id="{{ hospital.id }}">Edit</button>
+                                        <button class="btn btn-sm btn-danger delete-btn" data-id="{{ hospital.id }}">Delete</button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No hospitals available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Hospital Modal -->
+<div class="modal fade" id="viewHospitalModal" tabindex="-1" aria-labelledby="viewHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewHospitalModalLabel">Hospital Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Name:</strong> <span id="view_name"></span></p>
+                <p><strong>Address:</strong> <span id="view_address"></span></p>
+                <p><strong>Phone:</strong> <span id="view_phone"></span></p>
+                <p><strong>Email:</strong> <span id="view_email"></span></p>
+                <p><strong>Website:</strong> <a id="view_website" href="#" target="_blank"></a></p>
+                <p><strong>Established:</strong> <span id="view_established_year"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button id="downloadPdfBtn" class="btn btn-success">
+                    <i class="bi bi-download"></i> Download Visiting Card
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Hospital Modal -->
+<div class="modal fade" id="editHospitalModal" tabindex="-1" aria-labelledby="editHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editHospitalModalLabel">Edit Hospital</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editHospitalForm">
+                    <input type="hidden" id="edit_hospital_id">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Hospital Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_address" class="form-label">Address</label>
+                        <textarea class="form-control" id="edit_address" name="address" rows="2" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_phone" class="form-label">Phone</label>
+                            <input type="tel" class="form-control" id="edit_phone" name="phone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_website" class="form-label">Website</label>
+                            <input type="url" class="form-control" id="edit_website" name="website">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_established_year" class="form-label">Established Year</label>
+                            <input type="number" class="form-control" id="edit_established_year" name="established_year">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateHospitalBtn">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteHospitalModal" tabindex="-1" aria-labelledby="deleteHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteHospitalModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this hospital? This action cannot be undone.</p>
+                <input type="hidden" id="delete_hospital_id">
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Add new hospital
+        $('#hospitalInfoForm').on('submit', function(e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+            
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'hospital-info-list-create' %}",
+                data: formData,
+                success: function(response) {
+                    alert('Hospital added successfully!');
+                    location.reload();
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Error adding hospital. Please check the form.');
+                }
+            });
+        });
+        
+        // View hospital details
+        $('.view-btn').on('click', function() {
+            const hospitalId = $(this).data('id');
+            
+            $.ajax({
+                type: 'GET',
+                url: "/superadmin/hospital-info/" + hospitalId + "/",
+                success: function(response) {
+                    const hospital = response.hospital || response;
+                    $('#view_name').text(hospital.name);
+                    $('#view_address').text(hospital.address);
+                    $('#view_phone').text(hospital.phone);
+                    $('#view_email').text(hospital.email);
+                    $('#view_website').text(hospital.website).attr('href', hospital.website);
+                    $('#view_established_year').text(hospital.established_year);
+                    
+                    $('#viewHospitalModal').modal('show');
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Error loading hospital details.');
+                }
+            });
+        });
+        
+        // Edit hospital
+        $('.edit-btn').on('click', function() {
+            const hospitalId = $(this).data('id');
+            
+            $.ajax({
+                type: 'GET',
+                url: "/superadmin/hospital-info/" + hospitalId + "/",
+                success: function(response) {
+                    const hospital = response.hospital || response;
+                    $('#edit_hospital_id').val(hospital.id);
+                    $('#edit_name').val(hospital.name);
+                    $('#edit_address').val(hospital.address);
+                    $('#edit_phone').val(hospital.phone);
+                    $('#edit_email').val(hospital.email);
+                    $('#edit_website').val(hospital.website);
+                    $('#edit_established_year').val(hospital.established_year);
+                    
+                    $('#editHospitalModal').modal('show');
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Error loading hospital details.');
+                }
+            });
+        });
+        
+        // Update hospital
+        $('#updateHospitalBtn').on('click', function() {
+            const hospitalId = $('#edit_hospital_id').val();
+            const formData = $('#editHospitalForm').serialize();
+            
+            $.ajax({
+                type: 'PUT',
+                url: "/superadmin/hospital-info/" + hospitalId + "/",
+                data: formData,
+                success: function(response) {
+                    $('#editHospitalModal').modal('hide');
+                    alert('Hospital updated successfully!');
+                    location.reload();
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Error updating hospital. Please check the form.');
+                }
+            });
+        });
+        
+        // Delete hospital (show confirmation)
+        $('.delete-btn').on('click', function() {
+            const hospitalId = $(this).data('id');
+            $('#delete_hospital_id').val(hospitalId);
+            $('#deleteHospitalModal').modal('show');
+        });
+        
+        // Confirm delete
+        $('#confirmDeleteBtn').on('click', function() {
+            const hospitalId = $('#delete_hospital_id').val();
+            
+            $.ajax({
+                type: 'DELETE',
+                url: "/superadmin/hospital-info/" + hospitalId + "/",
+                success: function() {
+                    $('#deleteHospitalModal').modal('hide');
+                    alert('Hospital deleted successfully!');
+                    location.reload();
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('Error deleting hospital.');
+                }
+            });
+        });
+        // Add the PDF generation functionality
+        $('#downloadPdfBtn').on('click', function() {
+            const { jsPDF } = window.jspdf;
+            
+            // Create new PDF document (business card size)
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: [90, 50] // Standard business card size
+            });
+            
+            // Get hospital data
+            const hospitalName = $('#view_name').text();
+            const hospitalAddress = $('#view_address').text();
+            const hospitalPhone = $('#view_phone').text();
+            const hospitalEmail = $('#view_email').text();
+            const hospitalWebsite = $('#view_website').text();
+            
+            // Set background color (light blue)
+            doc.setFillColor(230, 240, 255);
+            doc.rect(0, 0, 90, 50, 'F');
+            
+            // Add border
+            doc.setDrawColor(70, 130, 180);
+            doc.setLineWidth(0.5);
+            doc.rect(2, 2, 86, 46);
+            
+            // Add hospital name
+            doc.setFontSize(14);
+            doc.setTextColor(40, 40, 120);
+            doc.setFont('helvetica', 'bold');
+            doc.text(hospitalName, 45, 10, { align: 'center' });
+            
+            // Add separator line
+            doc.setDrawColor(70, 130, 180);
+            doc.line(10, 14, 80, 14);
+            
+            // Add contact details
+            doc.setFontSize(8);
+            doc.setTextColor(60, 60, 60);
+            doc.setFont('helvetica', 'normal');
+            
+            // Calculate text positions
+            let yPos = 20;
+            const lineHeight = 5;
+            
+            // Address with icon
+            doc.text('🏢 ' + hospitalAddress, 6, yPos);
+            yPos += lineHeight;
+            
+            // Phone with icon
+            doc.text('📞 ' + hospitalPhone, 6, yPos);
+            yPos += lineHeight;
+            
+            // Email with icon
+            doc.text('✉️ ' + hospitalEmail, 6, yPos);
+            yPos += lineHeight;
+            
+            // Website with icon
+            if (hospitalWebsite) {
+                doc.text('🌐 ' + hospitalWebsite, 6, yPos);
+                yPos += lineHeight;
+            }
+            
+            // Add a footer note
+            doc.setFontSize(6);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Generated on ' + new Date().toLocaleDateString(), 45, 45, { align: 'center' });
+            
+            // Save the PDF with the hospital name
+            doc.save(hospitalName.replace(/\s+/g, '_') + '_contact.pdf');
+        });
+
+        
+    });
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+{% endblock %}
+{% endblock %}

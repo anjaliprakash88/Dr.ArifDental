@@ -1,0 +1,873 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Arif's Dental Clinic | Doctor Home</title>
+    <link rel="icon" type="image/x-icon" sizes="1008x1008" href="{% static 'images/favicon.png' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS (Make sure this is before your custom scripts) -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script>
+        window.existingDentitionData = {{ dentition_data_json|safe }};
+        window.existingPrescriptionData = {{ prescription_data_json|safe }};
+        const fullToothHistory = JSON.parse('{{ tooth_history_json|escapejs }}');
+
+</script>
+
+
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #d2e3e9;
+        }
+
+
+
+        .menu-item.active {
+            background: var(--hover-color);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--white);
+        }
+
+
+        /* Navbar */
+        .top-navbar {
+            height: 60px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            background: #d2e3e9;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            color: black;
+            z-index: 1000;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .top-navbar .dashboard-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+
+        .top-navbar .nav-icons a {
+            color: white;
+            font-size: 20px;
+            margin-left: 15px;
+            transition: 0.3s;
+        }
+
+        .top-navbar .nav-icons a:hover {
+            color: #f1c40f;
+        }
+
+        /* Content Area */
+        .content {
+
+            margin-top: 50px;
+            padding: 20px;
+        }
+        .dental-chart {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+         .quadrant {
+            width: 45%;
+            min-width: 300px;
+            margin-bottom: 20px;
+        }
+        .quadrant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e0e5ea;
+        }
+        .quadrant-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2a6496;
+        }
+        .quadrant-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            background-color: #2a6496;
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .teeth-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 2px;
+
+        }
+        .tooth {
+            width: 40px;
+            height: 60px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #fff;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .tooth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tooth.selected {
+            background-color: #b3d9ff;
+            border-color: #2a6496;
+            box-shadow: 0 0 0 2px rgba(42,100,150,0.3);
+            transform: translateY(-2px);
+        }
+
+
+        .tooth-number {
+            font-size: 12px;
+            margin-bottom: 3px;
+            font-weight: bold;
+            color: #FFFFFF;
+        }
+        .tooth-image {
+            width: 30px;
+            height: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+
+<!--------------- Top Navbar ---------------->
+<div class="top-navbar d-flex justify-content-between align-items-center">
+    <h1 class="dashboard-title ms-center"></h1>
+    <div class="d-flex justify-content-end">
+       <button type="button" class="btn-close mb-2"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+            id="closeCheckup"
+            data-booking-id="{{ booking_id }}"></button>
+    </div>
+</div>
+
+
+<!-------------- Content ---------------->
+<div class="container" style="margin-top:80px">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Last Appointment</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Patient Name:</strong> {{ patient_name }}</p>
+                    <p><strong>Last Appointment Date:</strong> {{ appointment_date }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Email:</strong> {{ patient_email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<!--------------- DENTAL EXAMINATION --------------->
+     <hr class="w-100 mb-5 mt-5 mx-auto">
+    <h3 class="text-start fw-bold">Dental Examination</h3>
+    <table class="table table-bordered table-striped">
+        <tbody>
+            <tr>
+                <th class="w-25 text-center align-middle">Chief Complaints</th>
+                <td>{{ data.dental_examination.chief_complaints }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">History of Present Illness</th>
+                <td>{{ data.dental_examination.history_of_present_illness }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Medical History</th>
+                <td>{{ data.dental_examination.medical_history }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Personal History</th>
+                <td>{{ data.dental_examination.personal_history }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">General Examination</th>
+                <td>{{ data.dental_examination.general_examination }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">General Examination (Intraoral)</th>
+                <td>{{ data.dental_examination.general_examination_intraoral }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Local Examination (Extraoral)</th>
+                <td>{{ data.dental_examination.local_examination_extraoral }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Soft Tissue</th>
+                <td>{{ data.dental_examination.soft_tissue }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Periodontal Status</th>
+                <td>{{ data.dental_examination.periodontal_status }}</td>
+            </tr>
+            <tr>
+                <th class="w-25 text-center align-middle">Treatment Plan</th>
+                <td>{{ data.dental_examination.treatment_plan }}</td>
+            </tr>
+           <tr>
+               <th class="w-25 text-center align-middle">Investigations</th>
+               <td>
+                   {% if data.investigations %}
+                    <div class="row">
+                        {% for inv in data.investigations %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <img src="{{ inv.image }}"
+                                     class="card-img-top img-fluid investigation-image"
+                                     alt="{{ inv.name }}"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#imagePreviewModal"
+                                     data-img-url="{{ inv.image }}">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No investigations available.</p>
+                    {% endif %}
+               </td>
+           </tr>
+        </tbody>
+    </table>
+
+
+<!----------------- MODEL FOR INVESTIGATION IMAGE PREVIEW--------------->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body p-0">
+        <img src="" id="modalImage" class="img-fluid w-100" alt="Full-size Investigation Image">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!---------------DENTITION--------------->
+    <hr class="w-100 mb-5 mt-5 mx-auto">
+    <h3 class="text-start fw-bold">Dentition</h3>
+    <div class="dental-chart">
+            <div class="quadrant">
+                <div class="quadrant-header">
+                    <span class="quadrant-title">Upper Left</span>
+                    <span class="quadrant-number">1</span>
+                </div>
+                <div class="teeth-row">
+                    <div class="tooth" id="tooth-18" data-tooth="18" data-status="healthy">
+                        <div class="tooth-number">18</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-17" data-tooth="17" data-status="healthy">
+                        <div class="tooth-number">17</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-16" data-tooth="16" data-status="healthy">
+                        <div class="tooth-number">16</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-15" data-tooth="15" data-status="healthy">
+                        <div class="tooth-number">15</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-14" data-tooth="14" data-status="healthy">
+                        <div class="tooth-number">14</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-13" data-tooth="13" data-status="healthy">
+                        <div class="tooth-number">13</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-12" data-tooth="12" data-status="healthy">
+                        <div class="tooth-number">12</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-11" data-tooth="11" data-status="healthy">
+                        <div class="tooth-number">11</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="separator"></div>
+            <div class="quadrant">
+                <div class="quadrant-header">
+                    <span class="quadrant-title">Upper Right</span>
+                    <span class="quadrant-number">2</span>
+                </div>
+                <div class="teeth-row">
+                    <div class="tooth" id="tooth-21" data-tooth="21" data-status="healthy">
+                        <div class="tooth-number">21</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-22" data-tooth="22" data-status="healthy">
+                        <div class="tooth-number">22</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-23" data-tooth="23" data-status="healthy">
+                        <div class="tooth-number">23</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-24" data-tooth="24" data-status="healthy">
+                        <div class="tooth-number">24</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-25" data-tooth="25" data-status="healthy">
+                        <div class="tooth-number">25</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-26" data-tooth="26" data-status="healthy">
+                        <div class="tooth-number">26</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-27" data-tooth="27" data-status="healthy">
+                        <div class="tooth-number">27</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-28" data-tooth="28" data-status="healthy">
+                        <div class="tooth-number">28</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="quadrant">
+                <div class="quadrant-header">
+                    <span class="quadrant-title">Lower Left</span>
+                    <span class="quadrant-number">3</span>
+                </div>
+                <div class="teeth-row">
+                    <div class="tooth" id="tooth-48" data-tooth="48" data-status="healthy">
+                        <div class="tooth-number">48</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-47" data-tooth="47" data-status="healthy">
+                        <div class="tooth-number">47</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-46" data-tooth="46" data-status="healthy">
+                        <div class="tooth-number">46</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-45" data-tooth="45" data-status="healthy">
+                        <div class="tooth-number">45</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-44" data-tooth="44" data-status="healthy">
+                        <div class="tooth-number">44</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-43" data-tooth="43" data-status="healthy">
+                        <div class="tooth-number">43</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-42" data-tooth="42" data-status="healthy">
+                        <div class="tooth-number">42</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-41" data-tooth="41" data-status="healthy">
+                        <div class="tooth-number">41</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="separator"></div>
+            <div class="quadrant">
+                <div class="quadrant-header">
+                    <span class="quadrant-title">Lower Right</span>
+                    <span class="quadrant-number">4</span>
+                </div>
+                <div class="teeth-row">
+                    <div class="tooth" id="tooth-31" data-tooth="31" data-status="healthy">
+                        <div class="tooth-number">31</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-32" data-tooth="32" data-status="healthy">
+                        <div class="tooth-number">32</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-33" data-tooth="33" data-status="healthy">
+                        <div class="tooth-number">33</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-34" data-tooth="34" data-status="healthy">
+                        <div class="tooth-number">34</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-35" data-tooth="35" data-status="healthy">
+                        <div class="tooth-number">35</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-36" data-tooth="36" data-status="healthy">
+                        <div class="tooth-number">36</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-37" data-tooth="37" data-status="healthy">
+                        <div class="tooth-number">37</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                    <div class="tooth" id="tooth-38" data-tooth="38" data-status="healthy">
+                        <div class="tooth-number">38</div>
+                        <i class="fa-solid fa-tooth fs-2 text-light healthy"></i>
+                    </div>
+                </div>
+            </div>
+
+       <div id="dentition-container" class="bg-light p-4 rounded">
+           <div id="dentition-items-container">
+               <!-- Dynamic dentition entries will be displayed here -->
+           </div>
+       </div>
+    </div>
+
+<!--------------- DIAGNOSIS --------------->
+     <hr class="w-100 mb-5 mt-5 mx-auto">
+    <h3 class="text-start fw-bold">Diagnosis</h3>
+    <table class="table table-bordered table-striped">
+        <tbody>
+            <tr>
+                <td>{{ data.diagnosis.diagnosis }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+<!---------------MEDICAL PRESCRIPTION--------------->
+        <hr class="w-100 mx-auto mt-5 mb-5">
+        <h3 class="text-start fw-bold">Prescription</h3>
+
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header">
+                <div id="medicine-items-container">
+                    <!-- Dynamic medicine items will be added here -->
+                </div>
+            </div>
+        </div>
+
+
+
+<!-- jQuery, Bootstrap JS, DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+<script>
+<!----------------- MODEL FOR INVESTIGATION IMAGE PREVIEW--------------->
+document.addEventListener("DOMContentLoaded", function () {
+    const modalImage = document.getElementById("modalImage");
+
+    document.querySelectorAll(".investigation-image").forEach(img => {
+      img.addEventListener("click", () => {
+        const imageUrl = img.getAttribute("data-img-url");
+        modalImage.src = imageUrl;
+      });
+    });
+  });
+
+
+
+$(document).ready(function() {
+    const bookingId = $("#booking_id").val();
+
+    // --------------------- APPOINTMENT DETAILS ---------------------
+    function initializeTodayAppointment() {
+        console.log("Initializing today's appointment view");
+    }
+
+
+    // --------------------- DENTITION MANAGEMENT ---------------------
+function initializeDentitionChart() {
+    $(document).ready(function () {
+        let dentitionCount = 0;
+
+        $(".tooth").off("click");
+        $(".treatment-item").off("click");
+        $("#add-medicine-btn").off("click");
+        $(document).off("click", ".remove-dentition");
+        $(document).off("click", ".dentition-item");
+
+        $(".tooth").each(function () {
+            $(this).attr("data-status", "healthy");
+            $(this).css("background-color", "#229954");
+        });
+
+        try {
+            if (window.existingDentitionData) {
+                $("#dentition-items-container").empty();
+
+                const toothDataMap = {};
+
+                // Group current treatment + previous history per tooth
+                for (const dent of window.existingDentitionData) {
+                    const toothId = dent.tooth_id;
+                    const treatment = dent.treatment;
+                    const color = dent.color_code || "#229954";
+                    const note = dent.note || "";
+                    const allNotes = dent.all_notes || [];
+
+                    if (!toothDataMap[toothId]) {
+                        toothDataMap[toothId] = {
+                            current: { treatment, color, note },
+                            history: new Set()
+                        };
+                    }
+
+                    allNotes.forEach(n => {
+                        if (n) toothDataMap[toothId].history.add(n);
+                    });
+                }
+
+                // Render each treated tooth entry
+                for (const [toothId, data] of Object.entries(toothDataMap)) {
+                    const isHealthy = data.current.treatment === "Healthy";
+                    const toothElement = $(`.tooth[data-tooth='${toothId}']`);
+                    toothElement.attr("data-status", data.current.treatment);
+                    toothElement.css("background-color", isHealthy ? "#229954" : data.current.color);
+
+                    if (!isHealthy) {
+                        const id = dentitionCount++;
+                        const treatmentNote = data.current.note || "";
+
+                        const historyNotes = Array.from(data.history).map(note => `
+                            <div class="note-item p-1 mb-1 border-bottom small">
+                                <strong>${toothId}</strong>: ${note}
+                            </div>
+                        `).join('');
+
+                        const noteHistoryBlock = historyNotes ? `
+                            <div class="note-block mt-2 p-2 border rounded bg-light">
+                                <h6>Previous Notes</h6>
+                                ${historyNotes}
+                            </div>
+                        ` : "";
+
+                        const newEntry = `
+                            <div class="dentition-item p-3 mb-3 border rounded bg-white shadow-sm"
+                                 id="dentition-item-${id}" data-id="${id}">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label><strong>Tooth No.</strong></label>
+                                        <input type="text" name="selected_teeth[]" class="form-control" value="${toothId}" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label><strong>Treatment</strong></label>
+                                        <input type="text" name="selected_treatment[]" class="form-control" value="${data.current.treatment}"
+                                               style="background-color: ${data.current.color}; color: white; padding: 10px; border-radius: 5px; border: none;" readonly>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        ${noteHistoryBlock}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        $("#dentition-items-container").append(newEntry);
+                        $(`#dentition-item-${id}`).data("treatment-color", data.current.color);
+                        $(`#dentition-item-${id}`).data("tooth-colors", { [toothId]: data.current.color });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error loading dentition data:", error);
+        }
+    });
+}
+
+    // --------------------- PRESCRIPTION MANAGEMENT ---------------------
+ $(document).ready(function () {
+    let medicineCount = 1;
+    const bookingId = $("#booking_id").val();
+
+    function loadMedicines(selectElementId) {
+        console.log("Fetching medicines for booking:", bookingId);
+        $.ajax({
+            url: `/doctor/medicine-prescription/${bookingId}/`,
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+                console.log("Debug: Full API Response:", data);
+                if (!data || !data.medicines) {
+                    console.error("Error: Medicines key not found in response.");
+                    return;
+                }
+
+                console.log("Debug: Medicine List:", data.medicines);
+                let selectElement = $(selectElementId);
+                selectElement.empty().append('<option value="">Select Medicine</option>');
+
+                $.each(data.medicines, function (index, med) {
+                    selectElement.append(`<option value="${med.id}">${med.medicine_name}</option>`);
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error("Medicine Fetch Error:", error);
+            }
+        });
+    }
+
+    function initializePrescriptionManagement() {
+        let medicineCount = 1;
+        console.log("Prescription management initialized.");
+
+        function loadExistingPrescriptions() {
+            console.log("Loading existing prescriptions...");
+            try {
+                console.log("Checking for existing prescriptions...");
+                console.log("window.existingPrescriptionData =", window.existingPrescriptionData);
+
+                if (window.existingPrescriptionData && window.existingPrescriptionData.length > 0) {
+                    console.log("Found existing prescriptions:", window.existingPrescriptionData);
+
+                    $('#medicine-items-container').empty();
+
+                    window.existingPrescriptionData.forEach((prescription, index) => {
+                        console.log(`Prescription ${index}:`, prescription);
+
+                        let medicineTimes, mealTimes;
+
+                        try {
+                            medicineTimes = Array.isArray(prescription.medicine_times)
+                                ? prescription.medicine_times
+                                : JSON.parse(prescription.medicine_times);
+
+                            mealTimes = Array.isArray(prescription.meal_times)
+                                ? prescription.meal_times
+                                : JSON.parse(prescription.meal_times);
+                        } catch (parseError) {
+                            console.error("JSON parse error in medicine_times or meal_times", parseError);
+                            medicineTimes = [];
+                            mealTimes = [];
+                        }
+
+                        console.log("Medicine Times:", medicineTimes);
+                        console.log("Meal Times:", mealTimes);
+
+                        const itemId = `existing-${index + 1}`;
+                        const medicineId = prescription.medicine?.id || prescription.medicine;
+                        const medicineName = prescription.medicine_name || "";
+
+                        console.log("Item ID:", itemId, "Medicine ID:", medicineId, "Name:", medicineName);
+
+                        const newItemHtml = createMedicineItemHtml(
+                            itemId,
+                            medicineId,
+                            medicineName,
+                            prescription.dosage_days,
+                            medicineTimes,
+                            mealTimes
+                        );
+
+                        $('#medicine-items-container').append(newItemHtml);
+                        loadMedicines(`#medicine_name_${itemId}`, medicineId);
+
+                    });
+                } else {
+                    console.log("No existing prescriptions found.");
+                }
+            } catch (error) {
+                console.error("Error loading prescription data:", error);
+            }
+        }
+
+        function createMedicineItemHtml(itemId, medicineId, medicineName, dosageDays, medicineTimes, mealTimes) {
+            function createCheckbox(value, name, isChecked) {
+                return `
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" value="${value}" name="${name}" ${isChecked ? 'checked' : ''}>
+                        <label class="form-check-label">${value}</label>
+                    </div>
+                `;
+            }
+
+            const medicineTimeOptions = ['Morning', 'Afternoon', 'Evening', 'Night'];
+            const medicineTimeCheckboxes = medicineTimeOptions.map(time =>
+                createCheckbox(time, `medicine_time_${itemId}`, medicineTimes.includes(time))
+            ).join('');
+
+            const mealTimeOptions = ['Before Meal', 'After Meal'];
+            const mealTimeCheckboxes = mealTimeOptions.map(time =>
+                createCheckbox(time, `meal_time_${itemId}`, mealTimes.includes(time))
+            ).join('');
+
+            return `
+                <table class="medicine-item table table-bordered table-striped" id="medicine-item-${itemId}">
+                    <tr>
+                        <th><label class="form-label">Medicine</label></th>
+                        <td>
+                            <input type="text" class="form-control" value="${medicineName || 'N/A'}" readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label class="form-label">Days</label></th>
+                        <td>
+                            <input type="number" id="dosage_days_${itemId}" class="form-control" name="dosage_days_${itemId}" min="1" value="${dosageDays || ''}">
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label class="form-label d-block">Medicine Times</label></th>
+                        <td>
+                            ${medicineTimeCheckboxes}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th><label class="form-label d-block">Meal Time</label></th>
+                        <td>
+                            ${mealTimeCheckboxes}
+                        </td>
+                    </tr>
+                </table>
+            `;
+        }
+
+        function addMedicineItem() {
+            const newItemHtml = createMedicineItemHtml(medicineCount, "", "", "", [], []);
+            $('#medicine-items-container').append(newItemHtml);
+
+            $('.remove-medicine').on('click', function () {
+                const itemId = $(this).data('id');
+                $(`#medicine-item-${itemId}`).remove();
+            });
+
+            medicineCount++;
+        }
+
+        $('#add-medicine-btnn').on('click', addMedicineItem);
+
+        loadExistingPrescriptions();
+
+        if ($('#medicine-items-container').children().length === 0) {
+            addMedicineItem();
+        }
+    }
+
+    initializePrescriptionManagement(); // Don't forget to call it
+
+});
+
+
+    // --------------------- DATA INITIALIZATION ---------------------
+
+    function initializePageData() {
+        try {
+            const serializedData = $("#page-data").data("content");
+
+            if (serializedData) {
+                window.existingDentitionData = serializedData.dentition ? [serializedData.dentition] : [];
+                window.existingPrescriptionData = serializedData.medicine_prescription ?
+                    [serializedData.medicine_prescription] : [];
+
+                window.patientData = serializedData.patient || {};
+                window.bookingData = serializedData.booking || {};
+            }
+        } catch (error) {
+            console.error("Error initializing page data:", error);
+        }
+    }
+
+    // Initialize all components
+    function initializePage() {
+        initializePageData();
+        initializeTodayAppointment();
+        initializeDentitionChart();
+        initializePrescriptionManagement();
+
+    }
+
+    // Start initialization
+    initializePage();
+});
+
+
+
+
+
+
+
+
+
+
+
+<!---------------REDIRECTING CHECKUP PAGE--------------->
+document.addEventListener("DOMContentLoaded", function () {
+    var closeButton = document.getElementById("closeCheckup");
+
+    if (closeButton) {
+        closeButton.addEventListener("click", function () {
+            var bookingId = this.getAttribute("data-booking-id");
+            console.log(bookingId)
+
+            if (bookingId) {
+                window.location.href = `/doctor/checkup/${bookingId}/`;
+            } else {
+                console.error("Booking ID not found!");
+            }
+        });
+    }
+});
+
+</script>
+</body>
+</html>

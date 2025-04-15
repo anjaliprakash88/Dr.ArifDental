@@ -1,0 +1,586 @@
+{% extends 'superadmin/base.html' %}
+
+{% block title %}Receptionist Management{% endblock %}
+
+{% block content %}
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+<!-- jQuery & DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        animation: fadeIn 1s ease-in;
+    }
+
+    h2 {
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        text-align: center;
+        font-weight: 600;
+        animation: slideInDown 0.8s ease-out;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #34495e;
+        margin-bottom: 0.5rem;
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #dde1e3;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        outline: none;
+        transform: translateY(-2px);
+    }
+
+    .form-control::placeholder {
+        color: #95a5a6;
+    }
+
+    .btn-primary {
+        background-color: #4a90e2;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .btn-primary:hover {
+        background-color: #357abd;
+        transform: translateY(-3px);
+    }
+
+    .btn-primary:focus {
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.4);
+    }
+
+    .mb-3 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .row {
+        margin-left: -15px;
+        margin-right: -15px;
+    }
+
+    .col-md-6 {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Card styling */
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #eaeaea;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Loading Modal Styles */
+    .loading-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-modal-content {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #4a90e2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .success-message {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+        animation: fadeIn 0.5s ease-in;
+        color: #28a745;
+        font-weight: 600;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    /* Custom styles for the button */
+    .custom-register-btn {
+        display: flex;
+        align-items: center; 
+        justify-content: center; 
+        padding: 10px 20px; 
+        border-radius: 25px; 
+        width: 100%;
+        max-width: 200px; 
+        background-color: #007bff; 
+        border: none;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin: 0 auto;
+    }
+
+    .custom-register-btn:hover {
+        background-color: #0056b3; 
+    }
+
+    .tabs-container {
+        margin-bottom: 2rem;
+    }
+
+    .nav-tabs .nav-link {
+        color: #495057;
+        border-radius: 0;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #4a90e2;
+        border-bottom: 2px solid #4a90e2;
+    }
+    
+    .toggle-indicator {
+        display: inline-block;
+        width: 15px;
+        text-align: center;
+        color: #4a90e2;
+    }
+
+    .receptionist-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .detail-row {
+        display: flex;
+        margin-bottom: 8px;
+    }
+
+    .detail-label {
+        font-weight: bold;
+        width: 120px;
+        color: #4a90e2;
+    }
+
+    .detail-value {
+        color: #000000;
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding: 1rem;
+            margin: 1rem;
+        }
+        
+        .col-md-6 {
+            margin-bottom: 1rem;
+        }
+        
+        .btn-primary {
+            width: 100%;
+        }
+        
+        .receptionist-details {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="container">
+    <h2>Receptionist Management</h2>
+    
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="receptionistTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="receptionists-list-tab" data-bs-toggle="tab" data-bs-target="#receptionists-list" type="button" role="tab">
+                Receptionists List
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="receptionist-registration-tab" data-bs-toggle="tab" data-bs-target="#receptionist-registration" type="button" role="tab">
+                Receptionist Registration
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tabs Content -->
+    <div class="tab-content" id="receptionistTabsContent">
+        <!-- Receptionists List Tab -->
+        <div class="tab-pane fade show active" id="receptionists-list" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    All Receptionists
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="receptionistTable" class="display">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Experience (Years)</th>
+                                    <th>Qualification</th>
+                                    <th>Phone</th>
+                                    <th>Branch</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Table will be populated by the DataTable -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Receptionist Registration Tab -->
+        <div class="tab-pane fade" id="receptionist-registration" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    Register New Receptionist
+                </div>
+                <div class="card-body">
+                    <form id="receptionistRegistrationForm">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" id="modal-first-name" class="form-control" placeholder="Enter first name" required pattern="[A-Za-z]+" title="First name should only contain letters" oninput="validateInput(this)">
+                                <small id="first-name-error" style="color: red;"></small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" id="modal-last-name" class="form-control" placeholder="Enter last name" required pattern="[A-Za-z]+" title="Last name should only contain letters" oninput="validateInput(this)">
+                                <small id="last-name-error" style="color: red;"></small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="modal-email" class="form-control" placeholder="Enter email" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid email address" oninput="validateInput(this)">
+                                <small id="email-error" style="color: red;"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" id="modal-phone-number" class="form-control" placeholder="Enter phone number" required pattern="^\+?[1-9]\d{1,14}$" title="Enter a valid phone number with country code" oninput="validateInput(this)">
+                                <small id="phone-error" style="color: red;"></small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="modal-address" class="form-control" placeholder="Enter address" required minlength="10" title="Address should be at least 10 characters long" oninput="validateInput(this)">
+                                <small id="address-error" style="color: red;"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Qualification</label>
+                                <input type="text" id="modal-qualification" class="form-control" placeholder="Enter qualification" required pattern="[A-Za-z\s]+" title="Qualification should only contain letters" oninput="validateInput(this)">
+                                <small id="qualification-error" style="color: red;"></small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Experience Years</label>
+                                <input type="number" id="modal-experience-years" class="form-control" placeholder="Enter experience years" required min="0" max="50" title="Experience years should be between 0 and 50" oninput="validateInput(this)">
+                                <small id="experience-error" style="color: red;"></small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Branch</label>
+                                <select id="model-branch" class="form-select" required>
+                                    <option value="">Select a Branch</option>
+                                </select>
+                                <small id="branch-error" style="color: red;"></small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary custom-register-btn">Register Receptionist</button>
+                        </div>
+                    </form>
+                    <div class="success-message">Registration successful!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="loading-modal" id="loadingModal">
+    <div class="loading-modal-content">
+        <div class="spinner"></div>
+        <div style="color: #2c3e50; margin-top: 1rem;">Processing registration...</div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function validateInput(input) {
+        const errorId = input.id + '-error';
+        const errorMessage = document.getElementById(errorId);
+
+        // Clear any previous error message
+        errorMessage.textContent = '';
+
+        // Check if the input is valid
+        if (!input.checkValidity()) {
+            errorMessage.textContent = input.validationMessage; // Display browser's built-in validation message
+        }
+    }
+
+    $(document).ready(function () {
+        // Initialize DataTable for receptionists
+        const table = $('#receptionistTable').DataTable({
+            "ajax": {
+                "url": "/superadmin/reception-create/",
+                "type": "GET",
+                "dataSrc": "serializer"
+            },
+            "columns": [
+                { 
+                    "data": null,
+                    "render": function(data, type, row) {
+                        return `<span class="toggle-indicator">▶</span>${row.user.first_name} ${row.user.last_name}`;
+                    }
+                },
+                { "data": "user.email" },
+                { 
+                    "data": "experience_years",
+                    "render": function(data) {
+                        return data + " years";
+                    }
+                },
+                { "data": "qualification" },
+                { "data": "phone_number" },
+                { 
+                    "data": "branch_name", // Use "branch_name" instead of "branch"
+                    "render": function(data) {
+                        return data ? data : "N/A"; // Handle null values
+                    }
+                }
+            ],
+            "ordering": true,
+            "searching": true,
+            "paging": true,
+            "info": true,
+            "lengthChange": true,
+            "autoWidth": false,
+            "responsive": true,
+            "language": {
+                "emptyTable": "No receptionists available",
+                "zeroRecords": "No matching records found"
+            }
+        });
+
+        // Handle row click to show/hide receptionist details
+        $('#receptionistTable tbody').on('click', 'tr', function() {
+            const tr = $(this);
+            const row = table.row(tr);
+            
+            if (row.child.isShown()) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.find('.toggle-indicator').html('▶');
+            } else {
+                // Open this row
+                const rowData = row.data();
+                row.child(formatReceptionistDetails(rowData)).show();
+                tr.find('.toggle-indicator').html('▼');
+            }
+        });
+
+        // Function to format the expanded row details
+        function formatReceptionistDetails(d) {
+            return `
+            <div class="receptionist-details">
+                <div style="flex: 1;">
+                    <div class="detail-row">
+                        <div class="detail-label">Address:</div>
+                        <div class="detail-value">${d.address}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">ID:</div>
+                        <div class="detail-value">${d.id}</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // Fetch branches for dropdown
+        function fetchBranches() {
+            $.ajax({
+                url: `/superadmin/branch/`,
+                type: 'GET',
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                success: function (response) {
+                    console.log("Branch API Response:", response);
+                    const branchSelect = $('#model-branch');
+                    branchSelect.empty().append(`<option value="">Select a branch</option>`);
+                    if (Array.isArray(response)) {
+                        response.forEach(branch => {
+                            branchSelect.append(`<option value="${branch.id}">${branch.name}</option>`);
+                        });
+                    } else {
+                        console.error("Expected an array but got:", response);
+                        alert("Error: Unexpected data format received!");
+                    }
+                },
+                error: function (xhr) {
+                    alert(`Failed to fetch branches: ${xhr.statusText}`);
+                }
+            });
+        }
+
+        // Load dropdowns on page load
+        fetchBranches();
+
+        // Handle form submission
+        $('#receptionistRegistrationForm').on('submit', function (event) {
+            event.preventDefault();
+
+            // Show loading modal
+            $('#loadingModal').css('display', 'flex');
+
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const data = {
+                address: $('#modal-address').val(),
+                experience_years: parseInt($('#modal-experience-years').val(), 10),
+                qualification: $('#modal-qualification').val(),
+                phone_number: $('#modal-phone-number').val(),
+                branch: parseInt($('#model-branch').val(), 10),
+                user: {
+                    first_name: $('#modal-first-name').val(),
+                    last_name: $('#modal-last-name').val(),
+                    email: $('#modal-email').val(),
+                }
+            };
+
+            console.log("Data Being sent: ", data);
+
+            $.ajax({
+                url: `/superadmin/reception-create/`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                headers: { "X-CSRFToken": csrftoken },
+            })
+            .done(function (response) {
+                // Hide loading modal
+                $('#loadingModal').css('display', 'none');
+                
+                // Show success alert
+                $('.success-message').fadeIn();
+                setTimeout(function() {
+                    $('.success-message').fadeOut();
+                }, 3000);
+                
+                // Clear form
+                $('#receptionistRegistrationForm')[0].reset();
+                
+                // Refresh the DataTable
+                table.ajax.reload();
+                
+                // Switch to list tab
+                $('#receptionists-list-tab').tab('show');
+            })
+            .fail(function (xhr) {
+                // Hide loading modal
+                $('#loadingModal').css('display', 'none');
+                alert(`Failed to register Receptionist: ${xhr.responseJSON?.error || xhr.statusText || 'Unknown error'}`);
+            });
+        });
+
+        // Add animation to inputs on focus
+        document.querySelectorAll('.form-control, .form-select').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+
+            input.addEventListener('blur', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "reception/base.html" %}
+
+{% block title %}Patient Options{% endblock %}
+
+{% block extra_css %}
+<style>
+    .options-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .option-card {
+        background-color: var(--white);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px var(--shadow-color);
+        padding: 20px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .option-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+    
+    .option-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    
+    .option-title {
+        color: var(--text-color);
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+    
+    .option-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .option-button {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: var(--text-color);
+        border: none;
+        padding: 8px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: auto;
+    }
+    
+    .option-button:hover {
+        background: linear-gradient(135deg, var(--hover-color), var(--primary-color));
+        color: var(--white);
+        transform: scale(1.05);
+    }
+    
+    @media (max-width: 768px) {
+        .options-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2><i class="fas fa-file-invoice-dollar"></i> Billing Management</h2>
+    <p>Select an option to manage pharmacy billing and payments</p>
+</div>
+
+<div class="options-container">
+    
+    <!-- Generate Bill Option -->
+    <div class="option-card">
+        <div class="option-icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <h3 class="option-title">Generate Bill</h3>
+        <p class="option-description">
+            Create new pharmacy bills for medications and services provided to patients
+        </p>
+        <a href="/reception/pharmacybill/" class="option-button">
+            Generate Bill
+        </a>
+    </div>
+
+    <!-- Generate Patient-Bill Option -->
+    <div class="option-card">
+        <div class="option-icon">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <h3 class="option-title">Generate Patient Bill</h3>
+        <p class="option-description">
+            Update the patient bills for treatments and services provided to patients
+        </p>
+        <a href="/reception/patientbilling/" class="option-button">
+            Generate Patient Bill
+        </a>
+    </div>
+
+    <!-- View Prescriptions Option -->
+    <div class="option-card">
+        <div class="option-icon">
+            <i class="fas fa-prescription"></i>
+        </div>
+        <h3 class="option-title">View Prescriptions</h3>
+        <p class="option-description">
+            Access and review patient prescription history, medications, and treatment plans
+        </p>
+        <a href="/reception/patient-prescription/" class="option-button">
+            View Prescriptions
+        </a>
+    </div>
+    
+    <!-- Previous Bills Option -->
+    <div class="option-card">
+        <div class="option-icon">
+            <i class="fas fa-history"></i>
+        </div>
+        <h3 class="option-title">Previous Bills</h3>
+        <p class="option-description">
+            Access and review billing history, payment records, and outstanding balances
+        </p>
+        <a href="/reception/phamarcybilllist/" class="option-button">
+            View Previous Bills
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add any specific JavaScript needed for this page here
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Patient options page loaded successfully');
+    });
+</script>
+{% endblock %}

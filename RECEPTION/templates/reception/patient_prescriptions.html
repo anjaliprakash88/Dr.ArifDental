@@ -1,0 +1,499 @@
+{% extends "reception/base.html" %}
+{% load static %}
+
+{% block title %}Patient Prescriptions{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prescription-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .search-section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .search-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .search-field {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .search-field label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .search-field input, .search-field select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .search-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .prescription-details {
+        margin-bottom: 15px;
+    }
+
+    .patient-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .patient-info-item {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .patient-info-item strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+
+    .medicine-list {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    .medicine-list th {
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+        padding: 10px;
+        text-align: left;
+    }
+
+    .medicine-list td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .medicine-list tr:last-child td {
+        border-bottom: none;
+    }
+
+    .medicine-list tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 30px;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .prescription-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+    }
+
+    .prescription-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .badge-blue {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .search-field {
+            min-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-section">
+    <h2><i class="fas fa-pills"></i> Patient Prescriptions</h2>
+    <div class="search-row">
+        <!-- <div class="search-field">
+            <label for="patient-search">Patient Name</label>
+            <input type="text" id="patient-search" placeholder="Search by patient name">
+        </div>
+        <div class="search-field">
+            <label for="doctor-search">Doctor Name</label>
+            <input type="text" id="doctor-search" placeholder="Search by doctor name">
+        </div> -->
+        <div class="search-field">
+            <label for="booking-id-visible">Booking ID</label>
+            <input type="text" id="booking-id-visible" placeholder="Enter booking ID" 
+                   onchange="document.getElementById('booking-id').value = this.value">
+        </div>
+        <div class="search-field">
+            <label for="patient-id-visible">Patient ID</label>
+            <input type="text" id="patient-id-visible" placeholder="Enter patient ID"
+                   onchange="document.getElementById('patient-id').value = this.value">
+        </div>
+        <div class="search-field">
+            <label for="date-from">Date From</label>
+            <input type="date" id="date-from">
+        </div>
+        <div class="search-field">
+            <label for="date-to">Date To</label>
+            <input type="date" id="date-to">
+        </div>
+    </div>
+    <div class="search-buttons">
+        <button id="search-btn" class="btn btn-primary">
+            <i class="fas fa-search"></i> Search
+        </button>
+        <button id="reset-btn" class="btn btn-secondary">
+            <i class="fas fa-redo"></i> Reset
+        </button>
+    </div>
+</div>
+
+<div class="prescription-container">
+    <h3>Prescriptions List</h3>
+    <div id="prescriptions-list">
+        <div class="no-data">
+            <i class="fas fa-search"></i> Search for a patient to view their prescriptions
+        </div>
+    </div>
+</div>
+
+<!-- Prescription Detail Template (hidden, used by JavaScript) -->
+<template id="prescription-template">
+    <div class="prescription-card">
+        <div class="prescription-header">
+            <div>
+                <h4 class="patient-name"></h4>
+                <p class="appointment-info"></p>
+            </div>
+            <div>
+                <span class="badge badge-blue booking-status"></span>
+            </div>
+        </div>
+        <div class="prescription-details">
+            <table class="medicine-list">
+                <thead>
+                    <tr>
+                        <th>Medicine Name</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Dosage Days</th>
+                        <th>Medicine Times</th>
+                        <th>Meal Times</th>
+                    </tr>
+                </thead>
+                <tbody class="medicine-items">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM elements
+        // const patientSearch = document.getElementById('patient-search');
+        // const doctorSearch = document.getElementById('doctor-search');
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+        const searchBtn = document.getElementById('search-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const prescriptionsList = document.getElementById('prescriptions-list');
+        const prescriptionTemplate = document.getElementById('prescription-template');
+
+        // Set default date range to current month
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        dateFrom.valueAsDate = firstDay;
+        dateTo.valueAsDate = lastDay;
+
+        // Event listeners
+        searchBtn.addEventListener('click', searchPrescriptions);
+        resetBtn.addEventListener('click', resetSearch);
+
+        // Patient ID search input (add this to HTML)
+        const patientIdInput = document.createElement('input');
+        patientIdInput.type = 'hidden';
+        patientIdInput.id = 'patient-id';
+
+        // Booking ID search input (add this to HTML)
+        const bookingIdInput = document.createElement('input');
+        bookingIdInput.type = 'hidden';
+        bookingIdInput.id = 'booking-id';
+        
+        // Function to search prescriptions
+        function searchPrescriptions() {
+            // Show loading state
+            prescriptionsList.innerHTML = '<div class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading prescriptions...</div>';
+
+            // Build the query parameters
+            const queryParams = new URLSearchParams();
+            
+            // Check if we have a patient ID
+            const patientId = document.getElementById('patient-id').value;
+            if (patientId) {
+                queryParams.append('patient_id', patientId);
+            }
+            
+            // Check if we have a booking ID
+            const bookingId = document.getElementById('booking-id').value;
+            if (bookingId) {
+                queryParams.append('booking_id', bookingId);
+            }
+            
+            // Check if we have a specific date
+            if (dateFrom.value && dateFrom.value === dateTo.value) {
+                queryParams.append('appointment_date', dateFrom.value);
+            }
+            
+            // If we have a patient name but no ID, we'll need to handle this differently
+            // as the API doesn't support patient_name as a GET parameter
+            // const patientName = patientSearch.value;
+            // const doctorName = doctorSearch.value;
+            
+            // For simple date filtering when date range is set
+            const dateFromValue = dateFrom.value;
+            const dateToValue = dateTo.value;
+            
+            let apiUrl = '/reception/api/patient-prescriptions/';
+            
+            // If we have query parameters from above, use GET request
+            if (queryParams.toString()) {
+                apiUrl += '?' + queryParams.toString();
+                
+                // Make the GET API call
+                fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(handleResponse)
+                .then(displayPrescriptions)
+                .catch(handleError);
+            } 
+            // If we have patient name, doctor name, or date range (not a single date)
+            // we need to use POST method as the API endpoint was designed
+            else if (patientName || doctorName || (dateFromValue && dateToValue && dateFromValue !== dateToValue)) {
+                const searchData = {
+                    patient_name: patientName,
+                    doctor_name: doctorName,
+                    date_from: dateFromValue,
+                    date_to: dateToValue
+                };
+                
+                // Make the POST API call
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(searchData)
+                })
+                .then(handleResponse)
+                .then(displayPrescriptions)
+                .catch(handleError);
+            }
+            // If no search criteria provided
+            else {
+                prescriptionsList.innerHTML = '<div class="no-data"><i class="fas fa-info-circle"></i> Please enter search criteria</div>';
+            }
+        }
+        
+        // Response handler
+        function handleResponse(response) {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        }
+        
+        // Error handler
+        function handleError(error) {
+            console.error('Error fetching prescriptions:', error);
+            prescriptionsList.innerHTML = `<div class="no-data"><i class="fas fa-exclamation-triangle"></i> Error loading prescriptions: ${error.message}</div>`;
+        }
+
+        // Function to display prescriptions
+        function displayPrescriptions(data) {
+            prescriptionsList.innerHTML = '';
+
+            if (data.length === 0) {
+                prescriptionsList.innerHTML = '<div class="no-data"><i class="fas fa-info-circle"></i> No prescriptions found</div>';
+                return;
+            }
+
+            // Loop through each booking
+            data.forEach(booking => {
+                if (!booking.prescriptions || booking.prescriptions.length === 0) {
+                    return; // Skip bookings without prescriptions
+                }
+
+                // Clone the template
+                const prescriptionCard = document.importNode(prescriptionTemplate.content, true);
+                
+                // Fill in booking data
+                prescriptionCard.querySelector('.patient-name').textContent = booking.patient_name;
+                prescriptionCard.querySelector('.appointment-info').textContent = 
+                    `Doctor: ${booking.doctor_name} | Date: ${formatDate(booking.appointment_date)} | Time: ${booking.appointment_time}`;
+                prescriptionCard.querySelector('.booking-status').textContent = booking.status;
+                
+                // Fill in medicines
+                const medicineItemsContainer = prescriptionCard.querySelector('.medicine-items');
+                
+                booking.prescriptions.forEach(prescription => {
+                    const row = document.createElement('tr');
+                    
+                    // Format medicine times and meal times as comma-separated lists
+                    const medicineTimes = Array.isArray(prescription.medicine_times) 
+                        ? prescription.medicine_times.join(', ') 
+                        : prescription.medicine_times;
+                    
+                    const mealTimes = Array.isArray(prescription.meal_times) 
+                        ? prescription.meal_times.join(', ') 
+                        : prescription.meal_times;
+                    
+                    row.innerHTML = `
+                        <td>${prescription.medicine.medicine_name}</td>
+                        <td>${prescription.medicine.medicine_type || 'N/A'}</td>
+                        <td>${prescription.medicine.category || 'N/A'}</td>
+                        <td>${prescription.dosage_days} days</td>
+                        <td>${medicineTimes}</td>
+                        <td>${mealTimes}</td>
+                    `;
+                    
+                    medicineItemsContainer.appendChild(row);
+                });
+                
+                prescriptionsList.appendChild(prescriptionCard);
+            });
+        }
+
+        // Function to reset search form
+        function resetSearch() {
+            // patientSearch.value = '';
+            // doctorSearch.value = '';
+            document.getElementById('patient-id').value = '';
+            document.getElementById('booking-id').value = '';
+            
+            // Reset date range to current month
+            dateFrom.valueAsDate = firstDay;
+            dateTo.valueAsDate = lastDay;
+            
+            prescriptionsList.innerHTML = '<div class="no-data"><i class="fas fa-search"></i> Search for a patient to view their prescriptions</div>';
+        }
+
+        // Helper function to format date
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        // Check URL for any GET parameters on page load
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let hasParams = false;
+            
+            if (urlParams.has('patient_id')) {
+                document.getElementById('patient-id').value = urlParams.get('patient_id');
+                hasParams = true;
+            }
+            
+            if (urlParams.has('booking_id')) {
+                document.getElementById('booking-id').value = urlParams.get('booking_id');
+                hasParams = true;
+            }
+            
+            if (urlParams.has('appointment_date')) {
+                const appointmentDate = urlParams.get('appointment_date');
+                dateFrom.value = appointmentDate;
+                dateTo.value = appointmentDate;
+                hasParams = true;
+            }
+            
+            // If we have parameters in URL, trigger search automatically
+            if (hasParams) {
+                searchPrescriptions();
+            }
+        }
+        
+        // Add the hidden inputs to the DOM
+        document.querySelector('.search-row').appendChild(patientIdInput);
+        document.querySelector('.search-row').appendChild(bookingIdInput);
+        
+        // Check URL parameters on page load
+        checkUrlParameters();
+    });
+</script>
+{% endblock %}

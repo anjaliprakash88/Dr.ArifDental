@@ -1,0 +1,326 @@
+{% extends 'reception/base.html' %}
+{% load static %}
+{% block title %}Enquiry Management{% endblock %}
+
+
+
+{% block extra_css %}
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<!-- Include Bootstrap CSS -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<!-- Include DataTables CSS -->
+<link href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet">
+
+<style>
+    /* Override any conflicting styles */
+    .main-container {
+      overflow: auto;
+      padding: 20px;
+    }
+    
+    /* Ensure table stays within bounds */
+    #enquiryTable {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    
+    /* Fix modal positioning */
+    .modal {
+      z-index: 1060;
+    }
+  </style>
+{% endblock %}
+{% block content %}   
+<div class="row">
+    <div class="col-12">
+      <h2 class="mb-4">Enquiry Management</h2>
+
+    
+    <!-- Add Enquiry Button -->
+    <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addEnquiryModal">Add Enquiry</button>
+
+    <!-- Enquiry Table -->
+    <table id="enquiryTable" class="table table-bordered table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID</th>
+                <th>Patient Name</th>
+                <th>Contact</th>
+                <th>Enquiry Type</th>
+                <th>Preferred Date</th>
+                <th>Preferred Time</th>
+                <th>Comments</th>
+                <th>Contacted By</th>
+                <th>Status</th>
+                <th>Handled By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+<!-- Add Enquiry Modal -->
+<div class="modal fade" id="addEnquiryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Enquiry</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+            </div>
+            <div class="modal-body">
+                <form id="addEnquiryForm">
+                    <div class="mb-3">
+                        <label>Patient Name</label>
+                        <input type="text" class="form-control" name="patient_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Contact Number</label>
+                        <input type="text" class="form-control" name="contact_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Enquiry Type</label>
+                        <input type="text" class="form-control" name="enquiry_type" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Preferred Date</label>
+                        <input type="date" class="form-control" name="preferred_date">
+                    </div>
+                    <div class="mb-3">
+                        <label>Preferred Time</label>
+                        <input type="time" class="form-control" name="preferred_time">
+                    </div>
+                    <div class="mb-3">
+                        <label>Comments</label>
+                        <textarea class="form-control" name="comments"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label>Contacted By</label>
+                        <input type="text" class="form-control" name="contacted_by">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Enquiry Modal -->
+<div class="modal fade" id="editEnquiryModal" tabindex="-1" aria-labelledby="editEnquiryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEnquiryModalLabel">Edit Enquiry</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+            </div>
+            <div class="modal-body">
+                <form id="editEnquiryForm">
+                    <input type="hidden" name="id" id="editEnquiryId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Patient Name</label>
+                        <input type="text" class="form-control" name="patient_name" id="editPatientName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contact Number</label>
+                        <input type="text" class="form-control" name="contact_number" id="editContactNumber" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Enquiry Type</label>
+                        <input type="text" class="form-control" name="enquiry_type" id="editEnquiryType" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Preferred Date</label>
+                        <input type="date" class="form-control" name="preferred_date" id="editPreferredDate">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Preferred Time</label>
+                        <input type="time" class="form-control" name="preferred_time" id="editPreferredTime">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comments</label>
+                        <textarea class="form-control" name="comments" id="editComments"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" name="status" id="editStatus">
+                            <option value="new">New</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="converted">Converted</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contacted By</label>
+                        <input type="text" class="form-control" name="contacted_by" id="editContactedBy">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Update Enquiry</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        function getCsrfToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+        }
+
+        $.ajaxSetup({
+            headers: { "X-CSRFToken": getCsrfToken() }
+        });
+
+        $(document).ready(function() {
+        let table = $('#enquiryTable').DataTable({
+            ajax: {
+                url: `/reception/enquiries/`,
+                dataSrc: ""
+            },
+            columns: [
+                { data: "id" },
+                { data: "patient_name" },
+                { data: "contact_number" },
+                { data: "enquiry_type" },
+                { data: "preferred_date" },
+                { data: "preferred_time" },
+                { data: "comments" },
+                { data: "contacted_by" },
+                { data: "status" },
+                { data: "handled_by_name" },
+                {
+                    data: "id",
+                    render: function(data) {
+                        return `
+                            <button class="btn btn-warning btn-sm edit-btn" data-id="${data}">Edit</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${data}">Delete</button>
+                        `;
+                    }
+                }
+            ]
+        });
+
+        // Handle Add Enquiry Form Submission
+        $('#addEnquiryForm').submit(function(event) {
+            event.preventDefault();
+            $.ajax({
+                url: `/reception/enquiries/`,
+                method: "POST",
+                data: $(this).serialize(),
+                success: function(response) {
+                    $('#addEnquiryModal').modal('hide');
+                    $('#addEnquiryForm')[0].reset();
+                    alert("Enquiry Saved Successfully.");
+                    table.ajax.reload();
+                },
+                error: function(error) {
+                    alert("Error saving enquiry.");
+                }
+            });
+        });
+
+        // Handle Edit Button Click - Prefetch Enquiry Details
+        $('#enquiryTable').on('click', '.edit-btn', function() {
+            let enquiryId = $(this).data("id");
+            console.log(enquiryId);
+
+            // Fetch enquiry details before updating
+            $.ajax({
+                url: `/reception/enquiries/${enquiryId}/`,
+                method: "GET",
+                
+                success: function(data) {
+                    console.log(data);
+                    $('#editEnquiryId').val(data.id);
+                    $('#editPatientName').val(data.patient_name);
+                    $('#editContactNumber').val(data.contact_number);
+                    $('#editEnquiryType').val(data.enquiry_type);
+                    $('#editPreferredDate').val(data.preferred_date);
+                    $('#editPreferredTime').val(data.preferred_time);
+                    $('#editComments').val(data.comments);
+                    $('#editContactedBy').val(data.contacted_by);
+                    $('#editStatus').val(data.status);
+
+                    $('#editEnquiryModal').modal('show');
+                },
+                error: function(error) {
+                    alert("Error fetching enquiry details.");
+                }
+            });
+        });
+
+        $('#editEnquiryForm').submit(function(event) {
+        event.preventDefault();
+        let enquiryId = $('#editEnquiryId').val();
+
+        let formData = {
+            patient_name: $('#editPatientName').val(),
+            contact_number: $('#editContactNumber').val(),
+            enquiry_type: $('#editEnquiryType').val(),
+            preferred_date: $('#editPreferredDate').val(),
+            preferred_time: $('#editPreferredTime').val(),
+            comments: $('#editComments').val(),
+            contacted_by: $('#editContactedBy').val(),
+            status: $('#editStatus').val()
+        };
+
+        $.ajax({
+            url: `/reception/enquiries/${enquiryId}/`,
+            method: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify(formData),
+            success: function(response) {
+                $('#editEnquiryModal').modal('hide');               
+                alert("Enquiry Saved Successfully.");
+                table.ajax.reload();
+            },
+            error: function(error) {
+                alert("Error updating enquiry.");
+            }
+        });
+    });
+
+
+        // Handle Delete
+        $('#enquiryTable').on('click', '.delete-btn', function() {
+            let enquiryId = $(this).data("id");
+            if (confirm("Are you sure you want to delete this enquiry?")) {
+                $.ajax({
+                    url: `/reception/enquiries/${enquiryId}/`,
+                    method: "DELETE",
+                    success: function(response) {
+                        alert("Enquiry Deleted Successfully.");
+                        table.ajax.reload();
+                    },
+                    error: function(error) {
+                        alert("Error deleting enquiry.");
+                    }
+                });
+            }
+        });
+    });
+
+</script>
+{% endblock %}

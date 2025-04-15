@@ -1,0 +1,447 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Arif's Dental Clinic | Doctor Home</title>
+    <link rel="icon" type="image/x-icon" sizes="1008x1008" href="{% static 'images/favicon.png' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        :root {
+            --primary-color: #87CEEB;
+            --secondary-color: #B0E0E6;
+            --text-color: #2c3e50;
+            --hover-color: #5dade2;
+            --shadow-color: rgba(0,0,0,0.1);
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #d2e3e9;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--primary-color);
+            padding-top: 20px;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .sidebar .sidebar-logo {
+            text-align: center;
+        }
+
+        .sidebar .sidebar-logo img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 12px;
+
+
+        }
+
+        .sidebar .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Adds space between menu items */
+            padding: 0 10px;
+        }
+
+        .sidebar .menu-item {
+            padding: 10px 15px;
+            color: black;
+            background: #d2e3e9;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Alternative if not using gap */
+        .sidebar .menu-item:not(:last-child) {
+            margin-bottom: 10px;
+        }
+        
+
+        .menu-item.active {
+            background: var(--hover-color);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--white);
+        }
+
+        .menu-item a {
+            color: inherit;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: #d2e3e9;
+            color: clack;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        /* Navbar */
+        .top-navbar {
+            height: 60px;
+            width: calc(100% - 260px);
+            position: fixed;
+            top: 0;
+            left: 260px;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            color: black;
+            z-index: 1000;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .top-navbar .dashboard-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+
+        .top-navbar .nav-icons a {
+            color: white;
+            font-size: 20px;
+            margin-left: 15px;
+            transition: 0.3s;
+        }
+
+        .top-navbar .nav-icons a:hover {
+            color: #f1c40f;
+        }
+
+        /* Content Area */
+        .content {
+            margin-left: 260px;
+            margin-top: 80px;
+            padding: 20px;
+        }
+
+        /* Table Styling */
+        .table-container {
+            background:  rgb(253, 253, 253);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary{
+            border:none;
+            color:black;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+
+        }
+    </style>
+</head>
+<body>
+
+<!---------------SIDE BAR------------>
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <img src="{% static 'images/logo (2).png' %}" alt="Dr. Arif's Dental Clinic Logo">
+    </div>
+    <div class="sidebar-menu">
+        <div class="menu-item">
+            <a href="/doctor/dashboard/">
+                <i class="fa-solid fa-house" style="color: #000000;"></i>
+                <strong>Dashboard</strong></a>
+        </div>
+        <div class="menu-item">
+            <a href="" class="view-patients" data-doctor-id="{{ doctor.id }}">
+               <i class="fa-solid fa-hospital-user" style="color: #000000;"></i>
+                <strong>Patient Records</strong>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!---------------TOP NAVBAR -------------->
+<div class="top-navbar d-flex justify-content-between align-items-center">
+    <h6 class="dashboard-title ms-start">OUTPATIENT LIST</h6>
+    <div class="dropdown">
+        <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fa-solid fa-circle-user fa-2x" style="color:rgb(0, 0, 0);"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="min-width: 270px;">
+          <li>
+              <a class="dropdown-item" href="/doctor/profile/">
+                  <i class="fa-solid fa-user" style="color: #000000;"></i>
+                  <strong>Dentist Profile </strong>
+              </a>
+          </li>
+            <li>
+                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="fa-solid fa-lock" style="color: #000000;"></i>
+                    <strong>Change Password</strong>
+                </a>
+           </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <div class="menu-item">
+                <a href="javascript:void(0)" class="logout-btn dropdown-item">
+                    <i class="fa-solid fa-power-off" style="color: #000000;"></i>
+                    <strong>Logout</strong>
+                </a>
+            </div>
+           </li>
+        </ul>
+      </div>
+</div>
+
+<!--------------- TODAY BOOKING TABLE --------------->
+<div class="content">
+    <div class="table-container">
+        <table id="bookingsTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th class="fw-bold text-center align-middle">Patient Name</th>
+                    <th class="fw-bold text-center align-middle">Gender</th>
+                    <th class="fw-bold text-center align-middle">Age</th>
+                    <th class="fw-bold text-center align-middle">Appointment Time</th>
+                    <th class="fw-bold text-center align-middle">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be dynamically loaded -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!---------------CHANGE PASSWORD-------------->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #87CEEB;" >
+                    <h5 class="modal-title" id="changePasswordModalLabel"><strong>Change Password</strong></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="doctorchangepasswordForm" action="/doctor/change-password/" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Old Password</strong></label>
+                            <input type="password" class="form-control" id="model-oldpassword" name="oldpassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>New Password</strong></label>
+                            <input type="password" class="form-control" id="model-newpassword" name="newpassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Confirm Password</strong></label>
+                            <input type="password" class="form-control" id="model-confirmpassword" name="confirmpassword" required>
+                        </div>
+                        <button type="submit" class="btn w-100 " style="background: #87CEEB;"><strong>Submit</strong></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<!-- jQuery, Bootstrap JS, DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+
+<!---------------CHECK UP BUTTON--------------->
+    $(document).on("click", ".checkup", function() {
+    let bookingId = $(this).data("id");
+    window.location.href = `/doctor/checkup/${bookingId}/`;
+});
+
+
+<!---------------TODAY BOOKING DATA TABLE--------------->
+$(document).ready(function() {
+    var table = $('#bookingsTable').DataTable({
+        responsive: true,
+        columns: [
+            { data: 'patient_name' },
+            { data: 'gender' },
+            { data: 'age' },
+            { data: 'appointment_time' },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    if (row.appointment_time) {
+                        return `<button class="btn btn-primary checkup fw-bold" data-id="${row.id}">CheckUp</button>`;
+                    } else {
+                        return `<button class="btn btn-secondary" disabled>CheckUp</button>`;
+                    }
+                }
+                }
+        ]
+    });
+
+    function fetchBookings() {
+        $.ajax({
+            url: `/doctor/dashboard/`,
+            type: "GET",
+            dataType: "json",
+            success: function(response) {
+                table.clear();
+                if (response.appointments.length > 0) {
+                    table.rows.add(response.appointments).draw();
+                } else {
+                    table.row.add({
+                        patient_name: "",
+                        gender: "",
+                        age: "",
+                        appointment_time: "",
+                        actions: ""
+                    }).draw();
+                }
+            },
+            error: function() {
+                alert("Failed to load bookings. Please try again.");
+            }
+        });
+    }
+
+    fetchBookings();
+
+    // Handle click events for buttons
+    $(document).on("click", ".treatment-summary", function() {
+        var bookingId = $(this).data("id");
+        if (!bookingId) {
+            alert("Invalid booking ID!");
+            return;
+        }
+    });
+
+    $(document).on("click", ".previous-note", function() {
+        var bookingId = $(this).data("id");
+        if (!bookingId) {
+            alert("Invalid booking ID!");
+            return;
+        }
+        // Add your logic for handling the "Previous Notes" button click
+    });
+
+});
+
+
+<!--------------------ALL PATIENT VIEW--------------->
+$(document).on("click", ".view-patients", function (e) {
+    e.preventDefault();
+
+    let doctorId = $(this).data("doctor-id");
+    if (doctorId) {
+        window.location.href = `/doctor/patients/${doctorId}/`;
+    } else {
+        alert("Doctor ID not found!");
+    }
+});
+
+<!---------------LOGOUT-------------------->
+    $(document).ready(function() {
+        $('.toggle-btn').on('click', function() {
+            $('.sidebar').toggleClass('active');
+        });
+
+        $('.logout-btn').on('click', function() {
+            const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            $.ajax({
+                url: '/doctor/logout/',
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+                success: function(response) {
+                    alert(response.message);
+                    window.location.href = '/doctor/login';
+
+                },
+                error: function(xhr) {
+                    let errorMessage = xhr.responseJSON?.error || xhr.statusText || 'Unknown error';
+                    alert(`Logout failed: ${errorMessage}`);
+                }
+            });
+        });
+    });
+
+<!---------------CHANGE PASSWORD---------------------->
+$(document).ready(function () {
+    var csrfToken = $("input[name='csrfmiddlewaretoken']").val();
+
+    $('#doctorchangepasswordForm').submit(function (e) {
+        e.preventDefault();
+
+        var formData = {
+            old_password: $("#model-oldpassword").val(),
+            new_password: $("#model-newpassword").val(),
+            confirm_password: $("#model-confirmpassword").val()
+        };
+
+        $.ajax({
+            url: '/doctor/change-password/',
+            method: 'POST',
+            data: JSON.stringify(formData),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+            success: function(response) {
+                $('#changePasswordModal').modal('hide');
+                window.location.href = '/doctor/login/';
+            },
+            error: function(xhr, status, error) {
+                console.log('Error:', error);
+            }
+        });
+    });
+});
+
+</script>
+
+</body>
+</html>

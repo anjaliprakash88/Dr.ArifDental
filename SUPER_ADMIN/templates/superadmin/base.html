@@ -1,0 +1,563 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/x-icon" href="ariflogo.png">
+    <title>Dr. Arif's Dental Clinic</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dr. Arif's Dental Clinic{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <style>
+        :root {
+            --primary-color: #87CEEB;
+            --secondary-color: #B0E0E6;
+            --text-color: #2c3e50;
+            --hover-color: #5dade2;
+            --shadow-color: rgba(0,0,0,0.1);
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            padding-top: 15px;
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-logo {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .sidebar-logo img {
+            width: 60px;
+            height: auto;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar-menu {
+            flex-grow: 1;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            padding: 8px 12px;
+            color: var(--text-color);
+            background: var(--white);
+            margin: 6px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            cursor: pointer;
+            text-align: left;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item.active {
+            background: var(--hover-color);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--white);
+        }
+
+        .menu-item a {
+            color: inherit;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: var(--hover-color);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .logout-container {
+            padding: 8px;
+            margin-top: auto;
+            margin-bottom: 20px;
+        }
+
+        .logout-option {
+            padding: 8px 12px;
+            color: var(--text-color);
+            background: var(--white);
+            margin: 6px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            cursor: pointer;
+            text-align: left;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .logout-option i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        /* Header Styles - Standardized */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 10px 15px;
+            width: calc(100% - 220px);
+            margin-left: 220px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            height: 60px; /* Fixed height for consistency */
+        }
+
+        .toggle-btn {
+            display: none;
+            background: var(--white);
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .toggle-btn:hover {
+            background: var(--hover-color);
+            color: var(--white);
+        }
+
+        .clinic-name {
+            font-size: 1.3em;
+            color: black;
+            font-weight: 600;
+            margin: 0 auto; /* Center the title */
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        /* Profile Dropdown Styles - Standardized */
+        .drarift-profile-container {
+            position: relative;
+            z-index: 2000;
+            margin-left: auto; /* Push to right */
+        }
+
+        .drarift-profile-icon {
+            font-size: 1rem;
+            color: #2c3e50;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+
+        .drarift-profile-icon:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            background-color: #f8f9fa;
+        }
+
+        .drarift-dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 220px;
+            z-index: 2001;
+            display: none;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .drarift-dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .drarift-dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .drarift-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .drarift-dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+        }
+
+        .drarift-dropdown-item i {
+            margin-right: 12px;
+            width: 18px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .drarift-dropdown-item span {
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logout option specific styling */
+        #drarift-logout-dropdown {
+            border-top: 1px solid #e9ecef;
+            color: #dc3545;
+        }
+
+        #drarift-logout-dropdown i {
+            color: #dc3545;
+        }
+
+        #drarift-logout-dropdown:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .main-container {
+            flex: 1;
+            margin-left: 220px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .footer {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            padding: 10px;
+            margin-left: 220px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        }
+
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 12px;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 220px;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .header {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .toggle-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .main-container, .footer {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .overlay.active {
+                display: block;
+            }
+            
+            .clinic-name {
+                font-size: 1.2rem;
+            }
+            
+            .dropdown-menu {
+                width: 180px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .clinic-name {
+                font-size: 1.1em;
+            }
+            
+            .menu-item, .logout-option {
+                font-size: 12px;
+            }
+
+            .toggle-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img src="https://i.postimg.cc/ydTrFVwp/ariflogo.png" alt="Dr. Arif's Dental Clinic Logo">
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item"><a href="{% url 'superadmindashboard' %}"><i class="fa fa-home"></i> Home</a></div>
+            <div class="menu-item"><a href="{% url 'branchCreate' %}"><i class="fas fa-building"></i> Manage Branch</a></div>
+            <div class="menu-item"><a href="{% url 'Doctor-Create' %}"><i class="fas fa-user-md"></i> Manage Doctor</a></div>
+            <div class="menu-item"><a href="{% url 'receptionCreate' %}"><i class="fas fa-user-tie"></i> Manage Receptionist</a></div>
+            <div class="menu-item"><a href="{% url 'lab-orders' %}"><i class="fa-solid fa-truck-front"></i> Track Orders</a></div>
+            <div class="menu-item"><a href="{% url 'medicine-list' %}"><i class="fa-solid fa-capsules"></i> Manage Medicine</a></div>
+            <div class="menu-item"><a href="{% url 'supplier_list' %}"><i class="fas fa-truck"></i> Manage Supplier</a></div>
+
+
+            <div class="menu-item"><a href="{% url 'hospital_inventory' %}"><i class="fas fa-hospital"></i> Manage Hospital Inventory</a></div>
+            <!-- <div class="menu-item"><a href="/superadmin/hospital-data/"><i class="fas fa-user-alt"></i>Hospital Data</a></div> -->
+        </div>
+        <!-- <div class="logout-container">
+            <div class="logout-option"><i class="fas fa-sign-out-alt"></i> Logout</div>
+        </div> -->
+    </nav>
+    <header class="header">
+        <button class="toggle-btn" id="toggle-btn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="clinic-name">Dr. Arif's Dental Clinic</h1>
+        <div class="drarift-profile-container">
+            <div class="drarift-profile-icon" id="drarift-profile-toggle">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="drarift-dropdown-menu" id="drarift-profile-dropdown">
+                <a href="{% url 'superadmin-update-profile' %}" class="drarift-dropdown-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Edit Profile</span>
+                </a>
+                <a href="{% url 'change_password' %}" class="drarift-dropdown-item">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" id="drarift-logout-dropdown" class="drarift-dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <span><strong>Dr. Arif's Multi-Speciality Dental Hospitals</strong></span>
+            <span><i class="fas fa-phone-alt"></i>+91 9876543210</span>
+            <span>© 2025 All rights reserved</span>
+        </div>
+    </footer>
+
+    <script>
+        function getCSRFToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+        }
+        const csrfToken = document.querySelector('[name=csrf-token]').content;
+
+        document.getElementById('toggle-btn').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        });
+        
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        });
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('overlay').classList.remove('active');
+            }
+        });
+
+        // Active menu item functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                const link = item.querySelector('a');
+                if (link && link.getAttribute('href')) {
+                    const href = link.getAttribute('href').replace(/^\/|\/$/g, '');
+                    const path = currentPath.replace(/^\/|\/$/g, '');
+                    
+                    if (path === href || path.startsWith(href + '/')) {
+                        item.classList.add('active');
+                    }
+                }
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileToggle = document.getElementById('profile-toggle');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            
+            // Toggle dropdown when profile icon is clicked
+            profileToggle.addEventListener('click', function(e) {
+                profileDropdown.classList.toggle('show');
+                e.stopPropagation();
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    <script>   
+        // Profile dropdown toggle
+        document.getElementById("drarift-profile-toggle").addEventListener("click", function(e) {
+            document.getElementById("drarift-profile-dropdown").classList.toggle("show");
+            e.stopPropagation();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            var toggle = document.getElementById("drarift-profile-toggle");
+            var dropdown = document.getElementById("drarift-profile-dropdown");
+            
+            if (toggle !== e.target && !toggle.contains(e.target) && dropdown !== e.target && !dropdown.contains(e.target)) {
+                dropdown.classList.remove("show");
+            }
+        });
+
+        // Logout functionality
+        document.getElementById("drarift-logout-dropdown").addEventListener("click", function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: "/superadmin/logout/",
+                type: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken()
+                },
+                success: function(response) {
+                    alert("Logged out successfully!");
+                    window.location.href = "/superadmin/login/";
+                },
+                error: function(xhr) {
+                    alert("Error logging out: " + xhr.responseText);
+                }
+            });
+        });
+
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

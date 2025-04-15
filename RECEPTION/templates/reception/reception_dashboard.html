@@ -1,0 +1,570 @@
+{% extends "reception/base.html" %}
+
+{% block title %}Reception Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .dashboard-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 10px;
+    }
+    
+    .dashboard-card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 0;
+    }
+    
+    .dashboard-card-icon {
+        color: var(--primary-color);
+        font-size: 1.5rem;
+    }
+    
+    .dashboard-stat {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 5px;
+    }
+    
+    .dashboard-stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background-color: #ffe0b2;
+        color: #e65100;
+    }
+    
+    .status-confirmed {
+        background-color: #c8e6c9;
+        color: #2e7d32;
+    }
+    
+    .status-cancelled {
+        background-color: #ffcdd2;
+        color: #c62828;
+    }
+    
+    .status-completed {
+        background-color: #bbdefb;
+        color: #1565c0;
+    }
+    
+    .status-new {
+        background-color: #e1f5fe;
+        color: #0277bd;
+    }
+    
+    .status-in-progress {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .status-converted {
+        background-color: #e0f7fa;
+        color: #00838f;
+    }
+    
+    .status-closed {
+        background-color: #f5f5f5;
+        color: #616161;
+    }
+    
+    .low-stock {
+        color: #f44336;
+    }
+    
+    .expired {
+        background-color: #ffcdd2;
+    }
+    
+    .quick-action-btn {
+        border: none;
+        background-color: var(--primary-color);
+        color: #fff;
+        border-radius: 5px;
+        padding: 8px 12px;
+        margin: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .quick-action-btn:hover {
+        background-color: var(--hover-color);
+    }
+    
+    .view-all-link {
+        display: block;
+        text-align: center;
+        color: var(--primary-color);
+        text-decoration: none;
+        padding: 5px;
+        font-weight: 500;
+    }
+    
+    .view-all-link:hover {
+        text-decoration: underline;
+    }
+    
+    #loading-spinner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+        background-color: #ffebee;
+        border-left: 4px solid #f44336;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="loading-spinner">
+    <div class="spinner"></div>
+</div>
+
+<div id="error-container" style="display: none;" class="error-message">
+    <h4>Error Loading Dashboard</h4>
+    <p id="error-message">There was a problem loading the dashboard data. Please try refreshing the page.</p>
+</div>
+
+<div class="container-fluid" id="dashboard-container" style="display: none;">
+    <!-- Welcome & Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h3 id="welcome-message">Welcome</h3>
+            <p class="text-muted" id="today-date"></p>
+        </div>
+    </div>
+    
+    <!-- Quick Stats Row -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Today's Appointments</h5>
+                    <i class="fas fa-calendar-day dashboard-card-icon"></i>
+                </div>
+                <div class="dashboard-stat" id="today-appointments-count">0</div>
+                <div class="dashboard-stat-label">Total appointments</div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">New Enquiries</h5>
+                    <i class="fas fa-question-circle dashboard-card-icon"></i>
+                </div>
+                <div class="dashboard-stat" id="new-enquiries-count">0</div>
+                <div class="dashboard-stat-label">Unprocessed enquiries waiting for action</div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Low Stock Medicines</h5>
+                    <i class="fas fa-exclamation-triangle dashboard-card-icon"></i>
+                </div>
+                <div class="dashboard-stat" id="low-stock-count">0</div>
+                <div class="dashboard-stat-label">Medicines below reorder level</div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Active Patients</h5>
+                    <i class="fas fa-user-injured dashboard-card-icon"></i>
+                </div>
+                <div class="dashboard-stat" id="active-patients-count">0</div>
+                <div class="dashboard-stat-label">Patients with appointments this month</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Today's Appointments -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Today's Appointments</h5>
+                    <i class="fas fa-calendar-check dashboard-card-icon"></i>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <!-- <th>Actions</th> -->
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-table-body">
+                            <!-- Appointments will be loaded here dynamically -->
+                            <tr id="no-appointments-row">
+                                <td colspan="5" class="text-center">No appointments scheduled for today.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/reception/bookings/" class="view-all-link">View All Appointments</a>
+            </div>
+        </div>
+        
+        <!-- Recent Enquiries -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Recent Enquiries</h5>
+                    <i class="fas fa-headset dashboard-card-icon"></i>
+                </div>
+                <div class="list-group" id="enquiries-list">
+                    <!-- Enquiries will be loaded here dynamically -->
+                    <div id="no-enquiries-row" class="list-group-item">No recent enquiries.</div>
+                </div>
+                <a href="/reception/enquiries/" class="view-all-link">View All Enquiries</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Inventory & Quick Actions -->
+    <div class="row">
+        <!-- Low Stock Medicines -->
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Inventory Alerts</h5>
+                    <i class="fas fa-pills dashboard-card-icon"></i>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medicines-table-body">
+                            <!-- Medicines will be loaded here dynamically -->
+                            <tr id="no-medicines-row">
+                                <td colspan="4" class="text-center">No low stock medicines.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/reception/medicineslist/" class="view-all-link">Manage Inventory</a>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h5 class="dashboard-card-title">Quick Actions</h5>
+                    <i class="fas fa-bolt dashboard-card-icon"></i>
+                </div>
+                <div class="d-flex flex-wrap justify-content-center">
+                    <a href="/reception/patients/" class="quick-action-btn">
+                        <i class="fas fa-user-plus me-2"></i> New Patient
+                    </a>
+                    <a href="/reception/bookings/" class="quick-action-btn">
+                        <i class="fas fa-calendar-plus me-2"></i> New Booking
+                    </a>
+                    <a href="/reception/enquiries/" class="quick-action-btn">
+                        <i class="fas fa-question-circle me-2"></i> New Enquiry
+                    </a>
+                    <a href="/reception/billing-options/" class="quick-action-btn">
+                        <i class="fas fa-file-invoice-dollar me-2"></i> Medicine Billing
+                    </a>
+                </div>
+                
+                <!-- Doctor Availability -->
+                <div class="mt-4">
+                    <h6 class="mb-3">Doctor Availability Today</h6>
+                    <div class="list-group" id="doctors-availability-list">
+                        <!-- Doctors availability will be loaded here dynamically -->
+                        <div id="no-doctors-row" class="list-group-item">No doctors scheduled for today.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Fetch dashboard data
+    fetchDashboardData();
+    
+    // Set up auto-refresh every 5 minutes
+    setInterval(fetchDashboardData, 5 * 60 * 1000);
+});
+
+function fetchDashboardData() {
+    const apiUrl = '/reception/api/dashboard/';
+    
+    fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Process and display data
+        displayDashboardData(data);
+        
+        // Hide loading spinner and show dashboard
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('dashboard-container').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error fetching dashboard data:', error);
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('error-container').style.display = 'block';
+        document.getElementById('error-message').textContent = 'Error: ' + error.message;
+    });
+}
+
+function displayDashboardData(data) {
+    // Update welcome message and date
+    document.getElementById('welcome-message').textContent = `Welcome, ${data.user.full_name}`;
+    document.getElementById('today-date').textContent = data.today_date;
+    
+    // Update stats
+    document.getElementById('today-appointments-count').textContent = data.today_appointments_count;
+    document.getElementById('new-enquiries-count').textContent = data.new_enquiries_count;
+    document.getElementById('low-stock-count').textContent = data.low_stock_count;
+    document.getElementById('active-patients-count').textContent = data.active_patients_count;
+    
+    // Update appointments table
+    updateAppointmentsTable(data.today_appointments);
+    
+    // Update enquiries list
+    updateEnquiriesList(data.recent_enquiries);
+    
+    // Update medicines table
+    updateMedicinesTable(data.low_stock_medicines);
+    
+    // Update doctors availability
+    updateDoctorsAvailability(data.doctors_availability);
+}
+
+function updateAppointmentsTable(appointments) {
+    const tableBody = document.getElementById('appointments-table-body');
+    const noAppointmentsRow = document.getElementById('no-appointments-row');
+    
+    // Clear previous content
+    tableBody.innerHTML = '';
+    
+    if (appointments && appointments.length > 0) {
+        appointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${appointment.time_formatted}</td>
+                <td>${appointment.patient_name}</td>
+                <td>${appointment.doctor_name}</td>
+                <td>
+                    <span class="status-badge status-${appointment.status.toLowerCase()}">
+                        ${appointment.status}
+                    </span>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } else {
+        tableBody.appendChild(noAppointmentsRow);
+    }
+}
+
+function updateEnquiriesList(enquiries) {
+    const enquiriesList = document.getElementById('enquiries-list');
+    const noEnquiriesRow = document.getElementById('no-enquiries-row');
+    
+    // Clear previous content
+    enquiriesList.innerHTML = '';
+    
+    if (enquiries && enquiries.length > 0) {
+        enquiries.forEach(enquiry => {
+            const listItem = document.createElement('div');
+            listItem.className = 'list-group-item list-group-item-action';
+            
+            let preferredDateTimeHTML = '';
+            if (enquiry.preferred_date) {
+                preferredDateTimeHTML = `${enquiry.preferred_date}`;
+                if (enquiry.preferred_time) {
+                    preferredDateTimeHTML += ` at ${enquiry.preferred_time}`;
+                }
+            } else {
+                preferredDateTimeHTML = 'No date preference';
+            }
+            
+            listItem.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${enquiry.patient_name}</h6>
+                    <span class="status-badge status-${enquiry.status}">${enquiry.status_display}</span>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-phone me-1"></i> ${enquiry.contact_number}
+                </small><br>
+                <small class="text-muted">
+                    <i class="fas fa-calendar me-1"></i> ${preferredDateTimeHTML}
+                </small>
+            `;
+            
+            enquiriesList.appendChild(listItem);
+        });
+    } else {
+        enquiriesList.appendChild(noEnquiriesRow);
+    }
+}
+
+function updateMedicinesTable(medicines) {
+    const tableBody = document.getElementById('medicines-table-body');
+    const noMedicinesRow = document.getElementById('no-medicines-row');
+    
+    // Clear previous content
+    tableBody.innerHTML = '';
+    
+    if (medicines && medicines.length > 0) {
+        medicines.forEach(medicine => {
+            const row = document.createElement('tr');
+            if (medicine.is_expired) {
+                row.className = 'expired';
+            }
+            
+            let expiryHTML = '-';
+            if (medicine.expiry_date) {
+                expiryHTML = medicine.expiry_date;
+                if (medicine.is_expired) {
+                    expiryHTML += ' <span class="badge bg-danger">Expired</span>';
+                }
+            }
+            
+            row.innerHTML = `
+                <td>${medicine.name}</td>
+                <td>${medicine.category}</td>
+                <td class="low-stock">${medicine.stock}</td>
+                <td>${expiryHTML}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    } else {
+        tableBody.appendChild(noMedicinesRow);
+    }
+}
+
+function updateDoctorsAvailability(doctors) {
+    const doctorsList = document.getElementById('doctors-availability-list');
+    const noDoctorsRow = document.getElementById('no-doctors-row');
+    
+    // Clear previous content
+    doctorsList.innerHTML = '';
+    
+    if (doctors && doctors.length > 0) {
+        doctors.forEach(doctor => {
+            const listItem = document.createElement('div');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            listItem.innerHTML = `
+                <div>
+                    <strong>Dr. ${doctor.last_name}</strong>
+                    <small class="d-block text-muted">${doctor.specialization}</small>
+                </div>
+                <span class="badge ${doctor.is_available ? 'bg-success' : 'bg-danger'}">
+                    ${doctor.is_available ? 'Available' : 'Unavailable'}
+                </span>
+            `;
+            
+            doctorsList.appendChild(listItem);
+        });
+    } else {
+        doctorsList.appendChild(noDoctorsRow);
+    }
+}
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

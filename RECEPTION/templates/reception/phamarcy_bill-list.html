@@ -1,0 +1,635 @@
+{% extends "reception/base.html" %}
+{% load static %}
+
+{% block title %}Medicine Bills{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        line-height: 1.6;
+        color: #333;
+    }
+    .controls {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .search-bar {
+        padding: 8px;
+        width: 300px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-left: 8px;
+    }
+    .btn:hover {
+        background-color: #2980b9;
+    }
+    .btn-print {
+        background-color: #2ecc71;
+    }
+    .btn-print:hover {
+        background-color: #27ae60;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .pagination button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        border: 1px solid #ddd;
+        background-color: white;
+        cursor: pointer;
+    }
+    .pagination button.active {
+        background-color: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+    .loading {
+        display: flex;
+        justify-content: center;
+        margin: 50px 0;
+    }
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #3498db;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @media print {
+        .controls, .pagination, .btn, .modal-close {
+            display: none;
+        }
+        .modal {
+            position: static;
+            background: none;
+        }
+        .modal-content {
+            box-shadow: none;
+            margin: 0;
+            max-width: 100%;
+        }
+        body {
+            padding: 0;
+            margin: 0;
+        }
+    }
+    .status-paid {
+        color: green;
+        font-weight: bold;
+    }
+    .status-pending {
+        color: orange;
+        font-weight: bold;
+    }
+    .status-cancelled {
+        color: red;
+        font-weight: bold;
+    }
+    
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        overflow: auto;
+    }
+    .modal-content {
+        background-color: white;
+        margin: 50px auto;
+        padding: 20px;
+        border-radius: 5px;
+        max-width: 800px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .modal-title {
+        margin-top: 0;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+    .no-bills-message {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: #777;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Medicine Bills</h1>
+
+<div class="controls">
+    <input type="text" class="search-bar" id="searchInput" placeholder="Search bills...">
+    <div>
+        <button class="btn btn-print" id="printButton">Print Bills</button>
+        <button class="btn" id="refreshButton">Refresh</button>
+    </div>
+</div>
+
+<div id="billsTableContainer">
+    <div class="loading" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+    <table id="billsTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Bill Number</th>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Contact</th>
+                <th>Doctor</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="billsTableBody">
+            <!-- Table rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+    <div id="noBillsMessage" class="no-bills-message" style="display: none;">
+        No bills found matching your search criteria.
+    </div>
+</div>
+
+<div class="pagination" id="pagination">
+    <!-- Pagination buttons will be populated by JavaScript -->
+</div>
+
+<!-- Bill Details Modal -->
+<div id="billDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" id="closeModal">&times;</span>
+        <div id="billDetailsContent">
+            <!-- Bill details will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    const apiUrl = '/reception/bills/';
+    let allBills = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    // DOM elements
+    const billsTable = document.getElementById('billsTable');
+    const billsTableBody = document.getElementById('billsTableBody');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const searchInput = document.getElementById('searchInput');
+    const printButton = document.getElementById('printButton');
+    const refreshButton = document.getElementById('refreshButton');
+    const paginationElement = document.getElementById('pagination');
+    const noBillsMessage = document.getElementById('noBillsMessage');
+    
+    // Modal elements
+    const billDetailsModal = document.getElementById('billDetailsModal');
+    const billDetailsContent = document.getElementById('billDetailsContent');
+    const closeModal = document.getElementById('closeModal');
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchBills();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        // Search input
+        searchInput.addEventListener('input', () => {
+            filterBills(searchInput.value.toLowerCase());
+        });
+
+        // Print button
+        printButton.addEventListener('click', printBills);
+
+        // Refresh button
+        refreshButton.addEventListener('click', fetchBills);
+        
+        // Modal close button
+        closeModal.addEventListener('click', () => {
+            billDetailsModal.style.display = 'none';
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === billDetailsModal) {
+                billDetailsModal.style.display = 'none';
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && billDetailsModal.style.display === 'block') {
+                billDetailsModal.style.display = 'none';
+            }
+        });
+    }
+
+    // Helper function to safely format numbers
+    function formatNumber(value) {
+        // Convert to number if it's a string
+        const num = typeof value === 'string' ? parseFloat(value) : value;
+        // Check if it's a valid number
+        return !isNaN(num) ? num.toFixed(2) : '0.00';
+    }
+    
+    // Helper function to format date
+    function formatDate(dateString) {
+        if (!dateString) return 'No date';
+        
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid date';
+        }
+    }
+
+    async function fetchBills() {
+        showLoading();
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error('Failed to fetch bills');
+            }
+            
+            const data = await response.json();
+            console.log('Received data:', data);
+            allBills = data;
+            
+            // Sort bills by date (newest first)
+            allBills.sort((a, b) => {
+                const dateA = a.bill_date ? new Date(a.bill_date) : new Date();
+                const dateB = b.bill_date ? new Date(b.bill_date) : new Date();
+                return dateB - dateA;
+            });
+            
+            displayBills(allBills);
+            setupPagination(allBills);
+        } catch (error) {
+            console.error('Error fetching bills:', error);
+            billsTableBody.innerHTML = `<tr><td colspan="8">Error loading bills. Please try again.</td></tr>`;
+            billsTable.style.display = 'table';
+            noBillsMessage.style.display = 'none';
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function displayBills(bills) {
+        // Clear the table
+        billsTableBody.innerHTML = '';
+        
+        if (bills.length === 0) {
+            billsTable.style.display = 'none';
+            noBillsMessage.style.display = 'block';
+            return;
+        }
+
+        // Calculate pagination
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedBills = bills.slice(startIndex, endIndex);
+
+        console.log('Displaying bills:', paginatedBills);
+        
+        // Create table rows
+        paginatedBills.forEach(bill => {
+            const row = document.createElement('tr');
+            
+            // Format date
+            const formattedDate = formatDate(bill.bill_date);
+            
+            // Determine status class
+            let statusClass = '';
+            const status = bill.payment_status || 'Unknown';
+            if (status.toLowerCase() === 'paid') {
+                statusClass = 'status-paid';
+            } else if (status.toLowerCase() === 'pending') {
+                statusClass = 'status-pending';
+            } else if (status.toLowerCase() === 'cancelled') {
+                statusClass = 'status-cancelled';
+            }
+            
+            // Safe access to fields with defaults
+            const billNumber = bill.bill_number || 'N/A';
+            const billId = bill.id || 'N/A';
+            const patientName = bill.patient_name || 'Unknown Patient';
+            const patientContact = bill.patient_contact || 'N/A';
+            const doctorName = bill.doctor_name || 'N/A';
+            
+            row.innerHTML = `
+                <td>${billNumber}</td>
+                <td>${formattedDate}</td>
+                <td>${patientName}</td>
+                <td>${patientContact}</td>
+                <td>${doctorName}</td>
+                <td>₹${formatNumber(bill.total_amount)}</td>
+                <td class="${statusClass}">${status}</td>
+                <td>
+                    <button class="btn" onclick="viewBillDetails(${billId})">View</button>
+                </td>
+            `;
+            
+            billsTableBody.appendChild(row);
+        });
+        
+        billsTable.style.display = 'table';
+        noBillsMessage.style.display = 'none';
+    }
+
+    function setupPagination(bills) {
+        const totalPages = Math.ceil(bills.length / itemsPerPage);
+        paginationElement.innerHTML = '';
+        
+        if (totalPages <= 1) {
+            paginationElement.style.display = 'none';
+            return;
+        }
+        
+        paginationElement.style.display = 'flex';
+        
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'Previous';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayBills(bills);
+                setupPagination(bills);
+            }
+        });
+        paginationElement.appendChild(prevButton);
+        
+        // Page buttons (limited to 5 buttons for better UI)
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        
+        if (endPage - startPage + 1 < maxButtons) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const button = document.createElement('button');
+            button.textContent = i;
+            if (i === currentPage) {
+                button.classList.add('active');
+            }
+            button.addEventListener('click', () => {
+                currentPage = i;
+                displayBills(bills);
+                setupPagination(bills);
+            });
+            paginationElement.appendChild(button);
+        }
+        
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Next';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayBills(bills);
+                setupPagination(bills);
+            }
+        });
+        paginationElement.appendChild(nextButton);
+    }
+
+    function filterBills(searchTerm) {
+        const filteredBills = allBills.filter(bill => {
+            return (
+                (bill.id && String(bill.id).includes(searchTerm)) ||
+                (bill.bill_number && bill.bill_number.toLowerCase().includes(searchTerm)) ||
+                (bill.patient_name && bill.patient_name.toLowerCase().includes(searchTerm)) ||
+                (bill.patient_contact && bill.patient_contact.toLowerCase().includes(searchTerm)) ||
+                (bill.doctor_name && bill.doctor_name.toLowerCase().includes(searchTerm)) ||
+                (bill.payment_status && bill.payment_status.toLowerCase().includes(searchTerm)) ||
+                (bill.bill_date && formatDate(bill.bill_date).toLowerCase().includes(searchTerm))
+            );
+        });
+        
+        currentPage = 1;
+        displayBills(filteredBills);
+        setupPagination(filteredBills);
+    }
+
+    async function viewBillDetails(billId) {
+        if (billId === 'N/A') {
+            billDetailsContent.innerHTML = `<p>Cannot display details for this bill.</p>`;
+            billDetailsModal.style.display = 'block';
+            return;
+        }
+        
+        showLoading();
+        try {
+            const response = await fetch(`${apiUrl}${billId}/`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch bill details');
+            }
+            
+            const bill = await response.json();
+            console.log('Bill details:', bill);
+            displayBillDetails(bill);
+            billDetailsModal.style.display = 'block';
+        } catch (error) {
+            console.error('Error fetching bill details:', error);
+            billDetailsContent.innerHTML = `<p>Error loading bill details. Please try again.</p>`;
+            billDetailsModal.style.display = 'block';
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function displayBillDetails(bill) {
+        // Format date
+        const formattedDate = formatDate(bill.bill_date);
+        
+        // Safe access with defaults
+        const billNumber = bill.bill_number || 'N/A';
+        const billId = bill.id || 'N/A';
+        const patientName = bill.patient_name || 'Unknown Patient';
+        const patientContact = bill.patient_contact || 'N/A';
+        const doctorName = bill.doctor_name || 'N/A';
+        const paymentMethod = bill.payment_method || 'N/A';
+        const status = bill.payment_status || 'Unknown';
+        const notes = bill.notes || 'None';
+        const discount = formatNumber(bill.discount || 0);
+        const tax = formatNumber(bill.tax || 0);
+        
+        let medicineList = '';
+        if (bill.bill_items && Array.isArray(bill.bill_items)) {
+            bill.bill_items.forEach((item, index) => {
+                // Access medicine details from the nested structure
+                let medicineName = 'Unknown Medicine';
+                let batchNumber = 'N/A';
+                
+                // Check if medicine_detail exists and contains medicine_name
+                if (item.medicine_detail && item.medicine_detail.medicine_name) {
+                    medicineName = item.medicine_detail.medicine_name;
+                    batchNumber = item.medicine_detail.batch_number || 'N/A';
+                }
+                
+                const quantity = item.quantity || 0;
+                const unitPrice = formatNumber(item.unit_price || 0);
+                const totalPrice = formatNumber(item.get_item_total || (item.unit_price * item.quantity) || 0);
+                
+                medicineList += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${medicineName}</td>
+                        <td>${batchNumber}</td>
+                        <td>${quantity}</td>
+                        <td>₹${unitPrice}</td>
+                        <td>₹${totalPrice}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            medicineList = `<tr><td colspan="6">No items available</td></tr>`;
+        }
+
+        billDetailsContent.innerHTML = `
+            <h2 class="modal-title">Bill #${billNumber}</h2>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <div>
+                    <p><strong>Bill ID:</strong> ${billId}</p>
+                    <p><strong>Date:</strong> ${formattedDate}</p>
+                    <p><strong>Doctor:</strong> ${doctorName}</p>
+                </div>
+                <div>
+                    <p><strong>Patient:</strong> ${patientName}</p>
+                    <p><strong>Contact:</strong> ${patientContact}</p>
+                    <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+                    <p><strong>Status:</strong> <span class="status-${status.toLowerCase()}">${status}</span></p>
+                </div>
+            </div>
+            
+            <h3>Medicine Items</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Medicine</th>
+                        <th>Batch</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${medicineList}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" style="text-align: right;"><strong>Sub Total:</strong></td>
+                        <td><strong>₹${formatNumber(bill.total_amount)}</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: right;"><strong>Discount:</strong></td>
+                        <td>₹${discount}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: right;"><strong>Tax:</strong></td>
+                        <td>₹${tax}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: right;"><strong>Grand Total:</strong></td>
+                        <td><strong>₹${formatNumber(bill.total_amount)}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div class="additional-info" style="margin-top: 20px;">
+                <p><strong>Notes:</strong> ${notes}</p>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="btn" onclick="window.print()">Print Bill</button>
+            </div>
+        `;
+    }
+
+    function printBills() {
+        window.print();
+    }
+
+    function showLoading() {
+        loadingSpinner.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingSpinner.style.display = 'none';
+    }
+
+    // Make viewBillDetails accessible globally
+    window.viewBillDetails = viewBillDetails;
+</script>
+{% endblock %}

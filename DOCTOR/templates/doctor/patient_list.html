@@ -1,0 +1,399 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Arif's Dental Clinic | Patient List</title>
+    <link rel="icon" type="image/x-icon" sizes="1008x1008" href="{% static 'images/favicon.png' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        :root {
+            --primary-color: #87CEEB;
+            --secondary-color: #B0E0E6;
+            --text-color: #2c3e50;
+            --hover-color: #5dade2;
+            --shadow-color: rgba(0,0,0,0.1);
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #d2e3e9;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--primary-color);
+            padding-top: 20px;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .sidebar .sidebar-logo {
+            text-align: center;
+        }
+
+        .sidebar .sidebar-logo img {
+             width: 120px;
+            height: auto;
+            margin-bottom: 12px;
+        }
+
+        .sidebar .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Adds space between menu items */
+            padding: 0 10px;
+        }
+        
+        .sidebar .menu-item {
+            padding: 10px 15px;
+            color: black;
+            background: #d2e3e9;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Alternative if not using gap */
+        .sidebar .menu-item:not(:last-child) {
+            margin-bottom: 10px;
+        }
+        
+
+        .menu-item.active {
+            background: var(--hover-color);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--white);
+        }
+
+        .menu-item a {
+            color: inherit;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .menu-item i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .menu-item:hover {
+            background: #d2e3e9;
+            color: clack;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        /* Navbar */
+        .top-navbar {
+            height: 60px;
+            width: calc(100% - 260px);
+            position: fixed;
+            top: 0;
+            left: 260px;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            color: black;
+            z-index: 1000;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .top-navbar .dashboard-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+
+        .top-navbar .nav-icons a {
+            color: white;
+            font-size: 20px;
+            margin-left: 15px;
+            transition: 0.3s;
+        }
+
+        .top-navbar .nav-icons a:hover {
+            color: #f1c40f;
+        }
+
+        /* Content Area */
+        .content {
+            margin-left: 260px;
+            margin-top: 80px;
+            padding: 20px;
+        }
+
+        /* Table Styling */
+        .table-container {
+            background:  rgb(253, 253, 253);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .last{
+            border:none;
+            color:black;
+            background: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="sidebar-logo">
+        <img src="{% static 'images/logo (2).png' %}" alt="Dr. Arif's Dental Clinic Logo">
+    </div>
+    <div class="sidebar-menu">
+        <div class="menu-item">
+            <a href="/doctor/dashboard/"><i class="fa-solid fa-house" style="color: #000000;"></i>
+                <strong>Dashboard</strong></a>
+        </div>
+        <div class="menu-item">
+            <a href="" class="view-patients" data-doctor-id="{{ doctor.id }}">
+               <i class="fa-solid fa-hospital-user" style="color: #000000;"></i>
+                <strong>Patient Records</strong>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Top Navbar -->
+<div class="top-navbar d-flex justify-content-between align-items-center">
+    <h1 class="dashboard-title ms-center">OUTPATIENT LIST</h1>
+</div>
+
+<!-- Content -->
+<div class="content">
+    <div class="table-container">
+        <table id="bookingsTable" class="table table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in patients_with_bookings %}
+                <tr>
+                    <td>{{ item.patient.full_name }}</td>
+                    <td>{{ item.patient.age }}</td>
+                    <td>{{ item.patient.gender }}</td>
+                    <td>{{ item.patient.phone }}</td>
+                    <td>
+                        {% with latest_booking=item.bookings.0 %}
+                        <button class="btn btn-primary last"
+                                data-id="{{ latest_booking.id }}"
+                                data-patient-id="{{ item.patient.id }}">
+                            View
+                        </button>
+                        {% endwith %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- Treatment Detail Modal -->
+<div class="modal fade" id="treatmentModal" tabindex="-1" aria-labelledby="treatmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color:#1c3342; color:white;">
+        <h5 class="modal-title" id="treatmentModalLabel">Recent Treatment Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="treatmentModalBody">
+        <p>Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- jQuery, Bootstrap JS, and DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+<script>
+   $(document).ready(function() {
+       if ($("#bookingsTable").length) {
+           $("#bookingsTable").DataTable(); // Initialize DataTable
+       }
+   });
+
+    $(document).ready(function() {
+       if ($("#bookingsTable").length) {
+           $("#bookingsTable").DataTable(); // Initialize DataTable
+       }
+   });
+
+
+$(document).on("click", ".btn.last", function () {
+    const patientId = $(this).data("patient-id");
+
+    if (!patientId) {
+        alert("Patient ID not found!");
+        return;
+    }
+
+    $.ajax({
+        url: `/doctor/patient/${patientId}`,  // Make sure this endpoint is set correctly
+        type: "GET",
+        success: function (data) {
+            let html = "";
+
+            if (data.dental_examination) {
+                html += `<h5><strong><u>Dental Examination</u></strong></h5>`;
+                html += `
+                    <table class="table table-bordered">
+                        <tr><th>Chief Complaints</th><td>${data.dental_examination.chief_complaints}</td></tr>
+                        <tr><th>History Of Present Illness</th><td>${data.dental_examination.history_of_present_illness}</td></tr>
+                        <tr><th>Medical History</th><td>${data.dental_examination.medical_history}</td></tr>
+                        <tr><th>Personal History</th><td>${data.dental_examination.personal_history}</td></tr>
+                        <tr><th>General Examination</th><td>${data.dental_examination.general_examination}</td></tr>
+                        <tr><th>General Examination Intraoral</th><td>${data.dental_examination.general_examination_intraoral}</td></tr>
+                        <tr><th>Local Examination Extraoral</th><td>${data.dental_examination.local_examination_extraoral}</td></tr>
+                        <tr><th>Soft Tissue</th><td>${data.dental_examination.soft_tissue}</td></tr>
+                        <tr><th>Periodontal Status</th><td>${data.dental_examination.periodontal_status}</td></tr>
+                        <tr><th>Treatment Plan</th><td>${data.dental_examination.treatment_plan}</td></tr>
+                    </table>`;
+
+            }
+
+            if (data.diagnosis) {
+                html += `<h5><strong><u>Diagnosis</u></strong></h5>`;
+                html += `
+                    <table class="table table-bordered">
+                        <tr><th>Diagnosis</th><td>${data.diagnosis.diagnosis}</td></tr>
+                    </table>`;
+            }
+
+            if (data.dentition) {
+                html += `<h5><strong><u>Dentition</u></strong></h5>`;
+                html += `
+                    <table class="table table-bordered">
+                        <tr><th>Selected Teeth</th><td>${data.dentition.selected_teeth}</td></tr>
+                        <tr><th>Treatment</th><td>${data.dentition.treatment}</td></tr>
+                        <tr><th>Note</th><td>${data.dentition.note}</td></tr>
+                    </table>`;
+            }
+
+            if (data.prescriptions && data.prescriptions.length > 0) {
+                html += `<h5><strong><u>Prescriptions</u></strong></h5>`;
+                html += `<table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Medicine</th>
+                                    <th>Days</th>
+                                    <th>Times</th>
+                                    <th>Meal Times</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                data.prescriptions.forEach(p => {
+                    html += `
+                        <tr>
+                            <td>${p.medicine}</td>
+                            <td>${p.dosage_days}</td>
+                            <td>${p.medicine_times}</td>
+                            <td>${p.meal_times}</td>
+                        </tr>`;
+                });
+                html += `</tbody></table>`;
+            }
+
+            if (html === "") {
+                html = "<p>No recent treatment data found.</p>";
+            }
+
+            $("#treatmentModalBody").html(html);
+            const modal = new bootstrap.Modal(document.getElementById('treatmentModal'));
+            modal.show();
+        },
+        error: function () {
+            $("#treatmentModalBody").html("<p>Error fetching treatment details.</p>");
+            const modal = new bootstrap.Modal(document.getElementById('treatmentModal'));
+            modal.show();
+        }
+    });
+});
+
+<!---------------LOGOUT-------------------->
+
+$(document).ready(function() {
+    $('.toggle-btn').on('click', function() {
+        $('.sidebar').toggleClass('active');
+    });
+
+    $('.logout-btn').on('click', function() {
+        const csrftoken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        $.ajax({
+            url: '/doctor/logout/',
+            type: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            success: function(response) {
+                alert(response.message);
+                window.location.href = '/doctor/login';
+            },
+            error: function(xhr) {
+                let errorMessage = xhr.responseJSON?.error || xhr.statusText || 'Unknown error';
+                alert(`Logout failed: ${errorMessage}`);
+            }
+        });
+    });
+});
+</script>
+
+
+</body>
+</html>

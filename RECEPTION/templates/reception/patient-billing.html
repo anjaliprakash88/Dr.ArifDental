@@ -1,0 +1,816 @@
+{% extends "reception/base.html" %}
+{% load static %}
+
+{% block title %}Patient Bill Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+<style>
+    .bill-action-btn {
+        margin-right: 5px;
+    }
+    .badge-paid {
+        background-color: #4CAF50;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .badge-partial {
+        background-color: #FFC107;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .badge-unpaid {
+        background-color: #F44336;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+    .payment-modal-form {
+        padding: 15px;
+    }
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 15px;
+    }
+    tr.paid-row {
+        background-color: rgba(76, 175, 80, 0.1) !important;
+    }
+    tr.partial-row {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    tr.unpaid-row {
+        background-color: rgba(244, 67, 54, 0.05) !important;
+    }
+    /* Add these styles to your existing CSS section */
+    .btn-primary.view-details-btn {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .btn-success.update-payment-btn {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        width: 100%;
+    }
+
+    .btn-success.update-payment-btn:disabled {
+        background-color: #5cb85c;
+        border-color: #5cb85c;
+        opacity: 1;
+    }
+
+    /* Make the buttons in the action column stack better */
+    .bill-action-btn {
+        margin-bottom: 5px;
+        display: block;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Patient Bills Management</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="patientSelect">Select Patient:</label>
+                        <select class="form-control" id="patientSelect">
+                            <option value="">All Patients</option>
+                            <!-- Patient options will be populated via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Payment Status:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterPaid" checked>
+                            <label class="form-check-label" for="filterPaid">Paid</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterPartial" checked>
+                            <label class="form-check-label" for="filterPartial">Partially Paid</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterUnpaid" checked>
+                            <label class="form-check-label" for="filterUnpaid">Unpaid</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Bills</h5>
+        </div>
+        <div class="card-body">
+            <div id="loadingIndicator" class="text-center py-4">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2">Loading bills...</p>
+            </div>
+            
+            <div id="billsTableContainer" style="display: none;">
+                <table id="billsTable" class="table table-striped table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Bill ID</th>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Total Amount</th>
+                            <th>Paid Amount</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table rows will be populated via DataTables -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bill Details Modal -->
+    <div class="modal fade" id="billDetailModal" tabindex="-1" role="dialog" aria-labelledby="billDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="billDetailModalLabel">Bill Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="billDetailContent">
+                    <!-- Bill details will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Update Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Update Payment</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="payment-modal-form">
+                        <input type="hidden" id="paymentBillId">
+                        <div class="form-group">
+                            <label for="paymentAmount">Payment Amount (₹)</label>
+                            <input type="number" class="form-control" id="paymentAmount" min="0" step="0.01">
+                            <small class="form-text text-muted" id="balanceInfo"></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitPaymentBtn">Submit Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    // Global variables
+    let billsTable;
+    let allBills = [];
+    let billDetails = {};
+    let patientsList = [];
+    
+    // Initialize DataTable
+    function initDataTable(data) {
+        if ($.fn.DataTable.isDataTable('#billsTable')) {
+            billsTable.destroy();
+        }
+        
+        billsTable = $('#billsTable').DataTable({
+            data: data,
+            columns: [
+                { data: 'id' },
+                { data: 'patient_name' },
+                { data: 'created_at', render: function(data) {
+                    return new Date(data).toLocaleDateString();
+                }},
+                { data: 'total_amount', render: function(data) {
+                    return '₹' + parseFloat(data).toFixed(2);
+                }},
+                { data: 'paid_amount', render: function(data) {
+                    return '₹' + parseFloat(data).toFixed(2);
+                }},
+                { data: 'balance', render: function(data) {
+                    return '₹' + parseFloat(data).toFixed(2);
+                }},
+                { data: 'status', render: function(data) {
+                    let badgeClass = '';
+                    let statusText = '';
+                    
+                    if (data === 'paid') {
+                        badgeClass = 'badge-paid';
+                        statusText = 'Paid';
+                    } else if (data === 'partial') {
+                        badgeClass = 'badge-partial';
+                        statusText = 'Partially Paid';
+                    } else {
+                        badgeClass = 'badge-unpaid';
+                        statusText = 'Unpaid';
+                    }
+                    
+                    return '<span class="' + badgeClass + '">' + statusText + '</span>';
+                }},
+                { data: null, render: function(data, type, row) {
+                    let viewBtn = '<button class="btn btn-primary bill-action-btn view-details-btn">View Details</button>';
+                    let paymentBtn = '<button class="btn btn-success bill-action-btn update-payment-btn"' + 
+                                (row.status === 'paid' ? ' disabled' : '') + '>' +
+                                (row.status === 'paid' ? 'Fully Paid' : 'Update Payment') + '</button>';
+                    let printBtn = '<button class="btn btn-info bill-action-btn print-bill-btn">Print Bill</button>';
+                    
+                    return viewBtn + paymentBtn + printBtn;
+                }}
+            ],
+            createdRow: function(row, data, dataIndex) {
+                $(row).addClass(data.status + '-row');
+            },
+            order: [[0, 'desc']],
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]]
+        });
+        
+        // Show table container
+        $('#loadingIndicator').hide();
+        $('#billsTableContainer').show();
+        
+        // Add event listeners for action buttons
+        $('#billsTable tbody').on('click', '.view-details-btn', function() {
+            const data = billsTable.row($(this).closest('tr')).data();
+            showBillDetails(billDetails[data.id]);
+        });
+        
+        $('#billsTable tbody').on('click', '.update-payment-btn', function() {
+            const data = billsTable.row($(this).closest('tr')).data();
+            showPaymentModal(data);
+        });
+        
+        $('#billsTable tbody').on('click', '.print-bill-btn', function() {
+            const data = billsTable.row($(this).closest('tr')).data();
+            printBill(billDetails[data.id]);
+        });
+    }
+    
+    // Print bill function
+    function printBill(bill) {
+        if (!bill || !bill.booking || !bill.booking.patient) {
+            alert('Unable to print bill due to missing data.');
+            return;
+        }
+
+        try {
+            // Populate print template
+            $('#print-bill-id').text(bill.id);
+            $('#print-patient-name').text(bill.booking.patient.full_name);
+            $('#print-patient-phone').text(bill.booking.patient.phone || 'Not provided');
+            $('#print-date').text(new Date(bill.created_at).toLocaleDateString());
+            
+            // Format appointment info
+            let appointmentInfo = 'Not specified';
+            if (bill.booking && bill.booking.appointment_date) {
+                const appointmentDate = new Date(bill.booking.appointment_date);
+                appointmentInfo = `${appointmentDate.toLocaleDateString()} ${bill.booking.appointment_time || ''}`;
+            }
+            $('#print-appointment').text(appointmentInfo);
+            
+            // Populate treatments
+            const printTbody = $('#print-treatments-tbody');
+            printTbody.empty();
+            
+            let treatments = [];
+            if (bill.dental_examination && bill.dental_examination.treatments) {
+                treatments = Array.isArray(bill.dental_examination.treatments) ?
+                    bill.dental_examination.treatments :
+                    JSON.parse(bill.dental_examination.treatments || '[]');
+            } else if (bill.treatments) {
+                treatments = Array.isArray(bill.treatments) ?
+                    bill.treatments :
+                    JSON.parse(bill.treatments || '[]');
+            }
+            
+            treatments.forEach(treatment => {
+                printTbody.append(`
+                    <tr>
+                        <td>${treatment.name || 'Unknown Treatment'}</td>
+                        <td>${treatment.description || 'No description'}</td>
+                        <td>₹${parseFloat(treatment.price || 0).toFixed(2)}</td>
+                    </tr>
+                `);
+            });
+            
+            if (treatments.length === 0) {
+                printTbody.append(`
+                    <tr>
+                        <td colspan="3">No treatments recorded</td>
+                    </tr>
+                `);
+            }
+            
+            // Populate summary
+            $('#print-total-amount').text(`₹${parseFloat(bill.total_amount).toFixed(2)}`);
+            $('#print-paid-amount').text(`₹${parseFloat(bill.paid_amount).toFixed(2)}`);
+            $('#print-balance').text(`₹${(parseFloat(bill.total_amount) - parseFloat(bill.paid_amount)).toFixed(2)}`);
+            
+            // Set status
+            let status = 'Unpaid';
+            if (parseFloat(bill.paid_amount) >= parseFloat(bill.total_amount)) {
+                status = 'Paid';
+            } else if (parseFloat(bill.paid_amount) > 0) {
+                status = 'Partially Paid';
+            }
+            $('#print-status').text(status);
+            
+            // Create print window
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Pop-up blocked. Please allow pop-ups for this site and try again.');
+                return;
+            }
+
+            // Write content to print window
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Patient Bill - ${bill.id}</title>
+                        <style>
+                            ${$('#print-template style').text()}
+                        </style>
+                    </head>
+                    <body>
+                        ${$('#print-content').html()}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+
+            // Wait for the content to load before printing
+            printWindow.onload = function() {
+                try {
+                    printWindow.focus();
+                    printWindow.print();
+                    // Don't close immediately; let the user interact with the print dialog
+                    // Optionally close after a delay or on print dialog close
+                    setTimeout(() => {
+                        printWindow.close();
+                    }, 500); // Adjust delay if needed
+                } catch (printError) {
+                    console.error('Error during print:', printError);
+                    alert('Failed to trigger print dialog. Please try again.');
+                    printWindow.close();
+                }
+            };
+        } catch (error) {
+            console.error('Error in printBill:', error);
+            alert('An error occurred while preparing the bill for printing. Please try again.');
+        }
+    }
+    
+    // Fetch all bills
+    function fetchBills() {
+        fetch('/reception/patientbills/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetched bills:', data);
+                allBills = data;
+                
+                if (data.length === 0) {
+                    $('#loadingIndicator').hide();
+                    $('#billsTableContainer').html(
+                        '<div class="alert alert-info">No bills found. The system may be empty or the API endpoint may be incorrect.</div>'
+                    );
+                    return;
+                }
+                
+                // Process bills to get details and prepare for DataTable
+                processBills(allBills);
+            })
+            .catch(error => {
+                console.error('Error fetching bills:', error);
+                $('#loadingIndicator').hide();
+                $('#billsTableContainer').html(
+                    '<div class="alert alert-danger">Error loading bills: ' + error.message + 
+                    '<br>Please check that the API endpoint is correct and the server is running.</div>'
+                );
+            });
+    }
+    
+    // Process bills to get details
+    function processBills(bills) {
+        const processPromises = bills.map(bill => {
+            return fetch(`/reception/patient-bill/${bill.id}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        console.warn(`Could not fetch details for bill ${bill.id}`);
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(billDetail => {
+                    if (!billDetail || !billDetail.booking || !billDetail.booking.patient) {
+                        return null;
+                    }
+                    
+                    // Store full bill details for later use
+                    billDetails[bill.id] = billDetail;
+                    
+                    // Extract patient info for the patients dropdown
+                    const patient = billDetail.booking.patient;
+                    const patientId = patient.id;
+                    const patientExists = patientsList.some(p => p.id === patientId);
+                    
+                    if (!patientExists) {
+                        patientsList.push({
+                            id: patientId,
+                            name: `${patient.first_name} ${patient.last_name}`
+                        });
+                    }
+                    
+                    // Determine payment status
+                    let status = 'unpaid';
+                    if (parseFloat(billDetail.paid_amount) >= parseFloat(billDetail.total_amount)) {
+                        status = 'paid';
+                    } else if (parseFloat(billDetail.paid_amount) > 0) {
+                        status = 'partial';
+                    }
+                    
+                    // Calculate balance
+                    const balance = parseFloat(billDetail.total_amount) - parseFloat(billDetail.paid_amount);
+                    
+                    // Return formatted data for DataTable
+                    return {
+                        id: billDetail.id,
+                        patient_id: patientId,
+                        patient_name: `${patient.full_name}`,
+                        created_at: billDetail.created_at,
+                        total_amount: parseFloat(billDetail.total_amount),
+                        paid_amount: parseFloat(billDetail.paid_amount),
+                        balance: balance,
+                        status: status
+                    };
+                })
+                .catch(error => {
+                    console.error(`Error processing bill ${bill.id}:`, error);
+                    return null;
+                });
+        });
+        
+        Promise.all(processPromises)
+            .then(processedBills => {
+                // Filter out null values
+                const validBills = processedBills.filter(bill => bill !== null);
+                
+                // Update patient dropdown
+                updatePatientDropdown();
+                
+                // Initialize DataTable with processed data
+                initDataTable(applyFilters(validBills));
+                
+                // Add event listeners for filters
+                addFilterEventListeners();
+            });
+    }
+    
+    // Update patient dropdown
+    function updatePatientDropdown() {
+        const patientSelect = document.getElementById('patientSelect');
+        patientSelect.innerHTML = '<option value="">All Patients</option>';
+        
+        patientsList.sort((a, b) => a.name.localeCompare(b.name)).forEach(patient => {
+            const option = document.createElement('option');
+            option.value = patient.id;
+            option.textContent = patient.name;
+            patientSelect.appendChild(option);
+        });
+    }
+    
+    // Apply filters to the data
+    function applyFilters(bills) {
+        // Get filter values
+        const selectedPatientId = document.getElementById('patientSelect').value;
+        const showPaid = document.getElementById('filterPaid').checked;
+        const showPartial = document.getElementById('filterPartial').checked;
+        const showUnpaid = document.getElementById('filterUnpaid').checked;
+        
+        // Apply filters
+        return bills.filter(bill => {
+            // Check payment status
+            if ((bill.status === 'paid' && !showPaid) || 
+                (bill.status === 'partial' && !showPartial) || 
+                (bill.status === 'unpaid' && !showUnpaid)) {
+                return false;
+            }
+            
+            // Check patient filter
+            if (selectedPatientId && bill.patient_id != selectedPatientId) {
+                return false;
+            }
+            
+            return true;
+        });
+    }
+    
+    // Add event listeners for filters
+    function addFilterEventListeners() {
+        const filterElements = [
+            document.getElementById('patientSelect'),
+            document.getElementById('filterPaid'),
+            document.getElementById('filterPartial'),
+            document.getElementById('filterUnpaid')
+        ];
+        
+        filterElements.forEach(element => {
+            element.addEventListener('change', () => {
+                const processedBills = Object.values(billDetails).map(bill => {
+                    const patient = bill.booking.patient;
+                    
+                    // Determine payment status
+                    let status = 'unpaid';
+                    if (parseFloat(bill.paid_amount) >= parseFloat(bill.total_amount)) {
+                        status = 'paid';
+                    } else if (parseFloat(bill.paid_amount) > 0) {
+                        status = 'partial';
+                    }
+                    
+                    // Calculate balance
+                    const balance = parseFloat(bill.total_amount) - parseFloat(bill.paid_amount);
+                    
+                    return {
+                        id: bill.id,
+                        patient_id: patient.id,
+                        patient_name: `${patient.first_name} ${patient.last_name}`,
+                        created_at: bill.created_at,
+                        total_amount: parseFloat(bill.total_amount),
+                        paid_amount: parseFloat(bill.paid_amount),
+                        balance: balance,
+                        status: status
+                    };
+                });
+                
+                // Apply filters and update DataTable
+                initDataTable(applyFilters(processedBills));
+            });
+        });
+    }
+    
+    // Show bill details in modal
+    function showBillDetails(bill) {
+        const modalContent = document.getElementById('billDetailContent');
+        
+        // Check for required data
+        if (!bill || !bill.booking || !bill.booking.patient) {
+            modalContent.innerHTML = '<div class="alert alert-warning">Unable to display complete bill details due to missing data.</div>';
+            $('#billDetailModal').modal('show');
+            return;
+        }
+        
+        // Create treatments list
+        let treatmentsHtml = '<div class="mt-3"><h6>Treatments:</h6><div class="treatments-list">';
+        
+        if (bill.dental_examination && bill.dental_examination.treatments) {
+            const treatments = Array.isArray(bill.dental_examination.treatments) ? 
+                             bill.dental_examination.treatments : 
+                             JSON.parse(bill.dental_examination.treatments || '[]');
+                             
+            if (treatments.length > 0) {
+                treatments.forEach(treatment => {
+                    treatmentsHtml += `
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <strong>${treatment.name || 'Unknown Treatment'}</strong>
+                                        <p class="mb-0 text-muted">${treatment.description || 'No description'}</p>
+                                    </div>
+                                    <div class="col-md-4 text-md-right">
+                                        <p class="mb-0">₹${parseFloat(treatment.price || 0).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                treatmentsHtml += '<p>No treatments found</p>';
+            }
+        } else if (bill.treatments) {
+            // Try alternate location for treatments
+            const treatments = Array.isArray(bill.treatments) ? 
+                             bill.treatments : 
+                             JSON.parse(bill.treatments || '[]');
+                             
+            if (treatments.length > 0) {
+                treatments.forEach(treatment => {
+                    treatmentsHtml += `
+                        <div class="card mb-2">
+                            <div class="card-body py-2">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <strong>${treatment.name || 'Unknown Treatment'}</strong>
+                                        <p class="mb-0 text-muted">${treatment.description || 'No description'}</p>
+                                    </div>
+                                    <div class="col-md-4 text-md-right">
+                                        <p class="mb-0">₹${parseFloat(treatment.price || 0).toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                treatmentsHtml += '<p>No treatments found</p>';
+            }
+        } else {
+            treatmentsHtml += '<p>No treatments found</p>';
+        }
+        
+        treatmentsHtml += '</div></div>';
+        
+        // Format appointment date and time
+        let appointmentInfo = '<p>No appointment information available</p>';
+        if (bill.booking && bill.booking.appointment_date) {
+            const appointmentDate = new Date(bill.booking.appointment_date);
+            const formattedDate = appointmentDate.toLocaleDateString();
+            appointmentInfo = `
+                <p><strong>Appointment Date:</strong> ${formattedDate}</p>
+                <p><strong>Appointment Time:</strong> ${bill.booking.appointment_time || 'Not specified'}</p>
+            `;
+        }
+        
+        // Determine payment status
+        let status = 'Unpaid';
+        let statusBadgeClass = 'badge-unpaid';
+        
+        if (parseFloat(bill.paid_amount) >= parseFloat(bill.total_amount)) {
+            status = 'Paid';
+            statusBadgeClass = 'badge-paid';
+        } else if (parseFloat(bill.paid_amount) > 0) {
+            status = 'Partially Paid';
+            statusBadgeClass = 'badge-partial';
+        }
+        
+        // Build modal content
+        modalContent.innerHTML = `
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Patient Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Name:</strong> ${bill.booking.patient.full_name}</p>
+                            <p><strong>Phone:</strong> ${bill.booking.patient.phone || 'Not provided'}</p>
+                            ${appointmentInfo}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Bill Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Bill ID:</strong> ${bill.id}</p>
+                            <p><strong>Created:</strong> ${new Date(bill.created_at).toLocaleString()}</p>
+                            <p><strong>Status:</strong> <span class="${statusBadgeClass}">${status}</span></p>
+                            <p><strong>Total Amount:</strong> ₹${parseFloat(bill.total_amount).toFixed(2)}</p>
+                            <p><strong>Paid Amount:</strong> ₹${parseFloat(bill.paid_amount).toFixed(2)}</p>
+                            <p><strong>Balance:</strong> ₹${(parseFloat(bill.total_amount) - parseFloat(bill.paid_amount)).toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ${treatmentsHtml}
+        `;
+        
+        // Show modal
+        $('#billDetailModal').modal('show');
+    }
+    
+    // Show payment modal
+    function showPaymentModal(bill) {
+        // Set payment bill ID
+        document.getElementById('paymentBillId').value = bill.id;
+        
+        // Set balance info
+        document.getElementById('balanceInfo').textContent = `Current balance: ₹${bill.balance.toFixed(2)}`;
+        
+        // Set default payment amount to the remaining balance
+        document.getElementById('paymentAmount').value = bill.balance.toFixed(2);
+        document.getElementById('paymentAmount').max = bill.balance.toFixed(2);
+        
+        // Show modal
+        $('#paymentModal').modal('show');
+    }
+    
+    // Submit payment update
+    function submitPayment() {
+        const billId = document.getElementById('paymentBillId').value;
+        const billDetail = billDetails[billId];
+        const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+        const newPaidAmount = parseFloat(billDetail.paid_amount) + paymentAmount;
+        
+        fetch(`/reception/update-payment/${billId}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                paid_amount: newPaidAmount
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update payment');
+            }
+            return response.json();
+        })
+        .then(updatedBill => {
+            // Hide payment modal
+            $('#paymentModal').modal('hide');
+            
+            // Update the bill details in our cache
+            billDetails[billId].paid_amount = updatedBill.paid_amount;
+            
+            // Refresh the bills display
+            fetchBills();
+            
+            // Show success message
+            alert('Payment updated successfully!');
+        })
+        .catch(error => {
+            console.error('Error updating payment:', error);
+            alert('Failed to update payment. Please try again. Error: ' + error.message);
+        });
+    }
+    
+    // Get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded, fetching bills...');
+        fetchBills();
+        
+        // Add event listener for payment submission
+        document.getElementById('submitPaymentBtn').addEventListener('click', submitPayment);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,756 @@
+{% extends "reception/base.html" %}
+{% load static %}
+
+{% block title %}Medicine Bill Generator{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+        margin-right: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    .btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .btn-danger {
+        background-color: #e74c3c;
+    }
+    .btn-success {
+        background-color: #2ecc71;
+    }
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    .items-table th, .items-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .items-table th {
+        background-color: #f2f2f2;
+    }
+    .summary-box {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+    .print-section {
+        display: none;
+    }
+    @media print {
+        .no-print {
+            display: none;
+        }
+        .print-section {
+            display: block;
+        }
+    }
+    /* Add this to your <style> section */
+        @media print {
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* But show the print-section elements and their children */
+    .print-section, .print-section *, #itemsTable, #itemsTable *, .summary-box, .summary-box * {
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    /* Position the print-sections at the top of the page */
+    .print-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    
+    /* Hide all non-print elements */
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Medicine Bill Generator</h1>
+
+<!-- Form Section -->
+<div class="form-section no-print">
+    <h2>Patient Information</h2>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="patientSelect">Select Patient</label>
+            <select id="patientSelect" class="form-control">
+                <option value="">-- Select Patient --</option>
+                <!-- Will be populated via API -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="patientName">Patient Name</label>
+            <input type="text" id="patientName" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="patientContact">Contact Number</label>
+            <input type="text" id="patientContact" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="patientEmail">Email</label>
+            <input type="email" id="patientEmail" class="form-control">
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="doctorSelect">Select Doctor</label>
+            <select id="doctorSelect" class="form-control">
+                <option value="">-- Select Doctor --</option>
+                <!-- Will be populated via API -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="doctorName">Doctor Name</label>
+            <input type="text" id="doctorName" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="branchSelect">Branch</label>
+            <select id="branchSelect" class="form-control">
+                <option value="">-- Select Branch --</option>
+                <!-- Will be populated via API -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="billDate">Bill Date</label>
+            <input type="date" id="billDate" class="form-control" value="" required>
+        </div>
+    </div>
+</div>
+
+<div class="form-section no-print">
+    <h2>Add Medicines</h2>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="medicineSelect">Select Medicine</label>
+            <select id="medicineSelect" class="form-control">
+                <option value="">-- Select Medicine --</option>
+                <!-- Will be populated via API -->
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="medicinePrice">Unit Price</label>
+            <input type="number" id="medicinePrice" class="form-control" readonly>
+        </div>
+        <div class="form-group">
+            <label for="quantity">Quantity</label>
+            <input type="number" id="quantity" class="form-control" value="1" min="1">
+        </div>
+        <div class="form-group" style="display: flex; align-items: flex-end;">
+            <button id="addItemBtn" class="btn">Add to Bill</button>
+        </div>
+    </div>
+</div>
+
+<div class="form-section">
+    <h2>Bill Items</h2>
+    <table class="items-table" id="itemsTable">
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th class="no-print">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Items will be added here -->
+        </tbody>
+    </table>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="discount">Discount (%)</label>
+            <input type="number" id="discount" class="form-control no-print" value="0" min="0" max="100">
+            <span id="discountPrint" class="print-section"></span>
+        </div>
+        <div class="form-group">
+            <label for="tax">Tax (%)</label>
+            <input type="number" id="tax" class="form-control no-print" value="0" min="0">
+            <span id="taxPrint" class="print-section"></span>
+        </div>
+        <div class="form-group">
+            <label for="paymentMethod">Payment Method</label>
+            <select id="paymentMethod" class="form-control no-print">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="upi">UPI</option>
+                <option value="insurance">Insurance</option>
+                <option value="other">Other</option>
+            </select>
+            <span id="paymentMethodPrint" class="print-section"></span>
+        </div>
+        <div class="form-group">
+            <label for="paymentStatus">Payment Status</label>
+            <select id="paymentStatus" class="form-control no-print">
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+            </select>
+            <span id="paymentStatusPrint" class="print-section"></span>
+        </div>
+    </div>
+    
+    <div class="summary-box">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Subtotal:</label>
+                <strong id="subtotal">₹0.00</strong>
+            </div>
+            <div class="form-group">
+                <label>Discount Amount:</label>
+                <strong id="discountAmount">₹0.00</strong>
+            </div>
+            <div class="form-group">
+                <label>Tax Amount:</label>
+                <strong id="taxAmount">₹0.00</strong>
+            </div>
+            <div class="form-group">
+                <label>Grand Total:</label>
+                <strong id="grandTotal">₹0.00</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-row no-print" style="margin-top: 20px;">
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px;" class="no-print">
+        <button id="generateBillBtn" class="btn btn-success">Generate Bill</button>
+        <button id="printBillBtn" class="btn">Print Bill</button>
+        <button id="resetBtn" class="btn btn-danger">Reset</button>
+    </div>
+</div>
+
+<!-- Print Header Section -->
+<div class="print-section" style="text-align: center; margin-bottom: 20px;">
+    <h2>Dr. Arif's Dental Clinic</h2>
+    <p>123 Medical Street, Healthcare City</p>
+    <p>Phone: (555) 123-4567 | Email: info@drarifdentalclinic.com</p>
+    <h3>MEDICINE BILL</h3>
+    <p>Bill #: <span id="billNumberPrint"></span> | Date: <span id="billDatePrint"></span></p>
+    <p><strong>Payment Status:</strong> <span id="paymentStatusPrint"></span></p>
+    <div style="text-align: left; margin-top: 15px;">
+        <p><strong>Patient:</strong> <span id="patientNamePrint"></span></p>
+        <p><strong>Contact:</strong> <span id="patientContactPrint"></span></p>
+        <p><strong>Doctor:</strong> <span id="doctorNamePrint"></span></p>
+    </div>
+</div>
+
+<!-- Print Footer Section -->
+<div class="print-section" style="margin-top: 30px;">
+    <p><strong>Notes:</strong> <span id="notesPrint"></span></p>
+    <p style="margin-top: 40px; text-align: right;">
+        <strong>Signature: </strong>____________________
+    </p>
+    <p style="text-align: center; margin-top: 40px; font-size: 12px;">
+        Thank you for your visit. Please keep this bill for your records.
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const printBillBtn = document.getElementById('printBillBtn');
+        printBillBtn.disabled = true;
+        printBillBtn.classList.add('btn-disabled');
+        printBillBtn.style.opacity = '0.5';
+        printBillBtn.style.cursor = 'not-allowed';
+        populateMedicines();
+        populateDropdowns();
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Fetch dropdown data
+        async function fetchDropdownData() {
+            try {
+                const response = await fetch('/reception/get_dropdown_data/');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch dropdown data');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching dropdown data:', error);
+                alert('Failed to load dropdown data. Please refresh the page.');
+                return { patients: [], doctors: [], branches: [] };
+            }
+        }
+
+        // Populate dropdowns
+        async function populateDropdowns() {
+            const data = await fetchDropdownData();
+            
+            // Populate patients dropdown
+            const patientSelect = document.getElementById('patientSelect');
+            data.patients.forEach(patient => {
+                const option = document.createElement('option');
+                option.value = patient.id;
+                option.textContent = patient.name;
+                option.dataset.contact = patient.contact || '';
+                option.dataset.email = patient.email || '';
+                patientSelect.appendChild(option);
+            });
+            
+            // Populate doctors dropdown
+            const doctorSelect = document.getElementById('doctorSelect');
+            data.doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.id;
+                option.textContent = doctor.name;
+                doctorSelect.appendChild(option);
+            });
+            
+            // Populate branches dropdown
+            const branchSelect = document.getElementById('branchSelect');
+            data.branches.forEach(branch => {
+                const option = document.createElement('option');
+                option.value = branch.id;
+                option.textContent = branch.name;
+                branchSelect.appendChild(option);
+            });
+        }
+
+        // Auto-fill patient details when selected
+        document.getElementById('patientSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const patientId = this.value;
+            
+            if (patientId) {
+                // Check if element exists before setting value
+                if (document.getElementById('patientId')) {
+                    document.getElementById('patientId').value = patientId;
+                }
+                document.getElementById('patientName').value = selectedOption.textContent.split(' - ')[0];
+                document.getElementById('patientContact').value = selectedOption.dataset.contact;
+                // Check if element exists before setting value
+                if (document.getElementById('patientEmail')) {
+                    document.getElementById('patientEmail').value = selectedOption.dataset.email;
+                }
+            } else {
+                // Check if element exists before setting value
+                if (document.getElementById('patientId')) {
+                    document.getElementById('patientId').value = '';
+                }
+                document.getElementById('patientName').value = '';
+                document.getElementById('patientContact').value = '';
+                // Check if element exists before setting value
+                if (document.getElementById('patientEmail')) {
+                    document.getElementById('patientEmail').value = '';
+                }
+            }
+        });
+
+        // Auto-fill doctor name when selected
+        document.getElementById('doctorSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            
+            if (this.value) {
+                document.getElementById('doctorName').value = selectedOption.textContent;
+            } else {
+                document.getElementById('doctorName').value = '';
+            }
+        });
+
+        const csrftoken = getCookie('csrftoken');
+        // Initialize date to today
+        document.getElementById('billDate').valueAsDate = new Date();
+
+        // Fetch medicines from API
+        async function fetchMedicines() {
+            try {
+                const response = await fetch('/reception/medicines/');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch medicines');
+                }
+                const medicines = await response.json();
+                return medicines;
+            } catch (error) {
+                console.error('Error fetching medicines:', error);
+                alert('Failed to load medicines. Please refresh the page.');
+                return [];
+            }
+        }
+
+        // Populate medicines dropdown
+        async function populateMedicines() {
+            const select = document.getElementById('medicineSelect');
+            // Clear existing options except the first one
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            
+            const medicines = await fetchMedicines();
+            medicines.forEach(med => {
+                const option = document.createElement('option');
+                option.value = med.id;
+                option.textContent = `${med.medicine_name} (${med.batch_number})`;
+                select.appendChild(option);
+            });
+        }
+
+        // Update price when medicine is selected
+        document.getElementById('medicineSelect').addEventListener('change', async function() {
+            const medicineId = parseInt(this.value);
+            if (!medicineId) {
+                document.getElementById('medicinePrice').value = '';
+                return;
+            }
+            
+            try {
+                const medicines = await fetchMedicines();
+                const medicine = medicines.find(m => m.id === medicineId);
+                
+                if (medicine) {
+                    document.getElementById('medicinePrice').value = medicine.unit_price;
+                } else {
+                    document.getElementById('medicinePrice').value = '';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('medicinePrice').value = '';
+            }
+        });
+
+        // Add item to bill
+        document.getElementById('addItemBtn').addEventListener('click', async function() {
+            const medicineSelect = document.getElementById('medicineSelect');
+            const medicineId = parseInt(medicineSelect.value);
+            const quantity = parseInt(document.getElementById('quantity').value);
+            
+            if (!medicineId || isNaN(medicineId)) {
+                alert('Please select a medicine');
+                return;
+            }
+            
+            if (!quantity || quantity <= 0) {
+                alert('Please enter a valid quantity');
+                return;
+            }
+            
+            try {
+                const medicines = await fetchMedicines();
+                const medicine = medicines.find(m => m.id === medicineId);
+                
+                if (!medicine) {
+                    alert('Medicine not found');
+                    return;
+                }
+                
+                const tbody = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+                
+                // Check if this medicine already exists in the table
+                const existingRows = tbody.getElementsByTagName('tr');
+                for (let i = 0; i < existingRows.length; i++) {
+                    const cells = existingRows[i].getElementsByTagName('td');
+                    if (cells[0].getAttribute('data-id') == medicineId) {
+                        // Update existing row instead of creating a new one
+                        const existingQty = parseInt(cells[2].textContent);
+                        const newQty = existingQty + quantity;
+                        cells[2].textContent = newQty;
+                        cells[3].textContent = '₹' + (medicine.unit_price * newQty).toFixed(2);
+                        calculateTotals();
+                        return;
+                    }
+                }
+                
+                // Create new row for the medicine
+                const row = tbody.insertRow();
+                
+                const nameCell = row.insertCell(0);
+                nameCell.textContent = medicine.medicine_name;
+                nameCell.setAttribute('data-id', medicine.id);
+                
+                const priceCell = row.insertCell(1);
+                priceCell.textContent = '₹' + Number(medicine.unit_price).toFixed(2);
+                
+                const qtyCell = row.insertCell(2);
+                qtyCell.textContent = quantity;
+                
+                const totalCell = row.insertCell(3);
+                const itemTotal = Number(medicine.unit_price) * quantity;
+                totalCell.textContent = '₹' + itemTotal.toFixed(2);
+                
+                const actionsCell = row.insertCell(4);
+                actionsCell.className = 'no-print';
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove';
+                removeBtn.className = 'btn btn-danger';
+                removeBtn.onclick = function() {
+                    tbody.removeChild(row);
+                    calculateTotals();
+                };
+                actionsCell.appendChild(removeBtn);
+                
+                // Reset form fields
+                medicineSelect.selectedIndex = 0;
+                document.getElementById('medicinePrice').value = '';
+                document.getElementById('quantity').value = 1;
+                
+                calculateTotals();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding medicine to bill');
+            }
+        });
+
+        // Calculate bill totals
+        function calculateTotals() {
+            const rows = document.getElementById('itemsTable').getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            let subtotal = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const totalText = rows[i].cells[3].textContent.replace('₹', '');
+                subtotal += parseFloat(totalText);
+            }
+            
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const tax = parseFloat(document.getElementById('tax').value) || 0;
+            
+            const discountAmount = (subtotal * discount) / 100;
+            const taxableAmount = subtotal - discountAmount;
+            const taxAmount = (taxableAmount * tax) / 100;
+            const grandTotal = taxableAmount + taxAmount;
+            
+            document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+            document.getElementById('discountAmount').textContent = '₹' + discountAmount.toFixed(2);
+            document.getElementById('taxAmount').textContent = '₹' + taxAmount.toFixed(2);
+            document.getElementById('grandTotal').textContent = '₹' + grandTotal.toFixed(2);
+        }
+
+        // Update totals when discount or tax changes
+        document.getElementById('discount').addEventListener('input', calculateTotals);
+        document.getElementById('tax').addEventListener('input', calculateTotals);
+
+        // Generate Bill (API call)
+        document.getElementById('generateBillBtn').addEventListener('click', async function() {
+            const patientName = document.getElementById('patientName').value;
+            
+            if (!patientName) {
+                alert('Please enter patient name');
+                return;
+            }
+            
+            const rows = document.getElementById('itemsTable').getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            if (rows.length === 0) {
+                alert('Please add at least one medicine to the bill');
+                return;
+            }
+            
+            // Prepare bill items
+            const billItems = [];
+            for (let i = 0; i < rows.length; i++) {
+                const medicineId = rows[i].cells[0].getAttribute('data-id');
+                const quantity = parseInt(rows[i].cells[2].textContent);
+                
+                billItems.push({
+                    medicine: parseInt(medicineId),
+                    quantity: quantity
+                });
+            }
+            
+            // Prepare bill data
+            const billData = {
+                patient_name: patientName,
+                patient_contact: document.getElementById('patientContact').value,
+                doctor_name: document.getElementById('doctorName').value,
+                bill_date: document.getElementById('billDate').value,
+                discount: parseFloat(document.getElementById('discount').value) || 0,
+                tax: parseFloat(document.getElementById('tax').value) || 0,
+                payment_method: document.getElementById('paymentMethod').value,
+                payment_status: document.getElementById('paymentStatus').value, 
+                notes: document.getElementById('notes').value,
+                bill_items: billItems
+            };
+            
+            // Only add these fields if the elements exist and have values
+            if (document.getElementById('patientId') && document.getElementById('patientId').value) {
+                billData.patient = parseInt(document.getElementById('patientId').value);
+            }
+            
+            if (document.getElementById('patientEmail') && document.getElementById('patientEmail').value) {
+                billData.patient_email = document.getElementById('patientEmail').value;
+            }
+            
+            if (document.getElementById('doctorSelect') && document.getElementById('doctorSelect').value) {
+                billData.doctor = parseInt(document.getElementById('doctorSelect').value);
+            }
+            
+            if (document.getElementById('branchSelect') && document.getElementById('branchSelect').value) {
+                billData.branch = parseInt(document.getElementById('branchSelect').value);
+            }
+            
+            console.log("Bill data to be sent to API:", billData);
+            
+            try {
+                // Get CSRF token
+                const csrftoken = getCookie('csrftoken');
+                
+                const response = await fetch('/reception/bills/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(billData)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(JSON.stringify(errorData));
+                }
+                
+                const data = await response.json();
+                console.log('Success:', data);
+                
+                // Update print view with bill details
+                const billNumber = data.bill_number || data.id;
+                document.getElementById('billNumberPrint').textContent = billNumber;
+                document.getElementById('billDatePrint').textContent = document.getElementById('billDate').value;
+                document.getElementById('patientNamePrint').textContent = patientName;
+                document.getElementById('patientContactPrint').textContent = document.getElementById('patientContact').value;
+                document.getElementById('doctorNamePrint').textContent = document.getElementById('doctorName').value;
+                document.getElementById('discountPrint').textContent = document.getElementById('discount').value + '%';
+                document.getElementById('taxPrint').textContent = document.getElementById('tax').value + '%';
+                document.getElementById('paymentMethodPrint').textContent = document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex].text;
+                document.getElementById('paymentStatusPrint').textContent = document.getElementById('paymentStatus').options[document.getElementById('paymentStatus').selectedIndex].text;
+                document.getElementById('notesPrint').textContent = document.getElementById('notes').value;
+                
+                alert(`Bill generated successfully! Bill Number: ${billNumber}`);
+                // Add this after the alert for successful bill generation:
+                    printBillBtn.disabled = false;
+                    printBillBtn.classList.remove('btn-disabled');
+                    printBillBtn.style.opacity = '1';
+                    printBillBtn.style.cursor = 'pointer';
+
+                    // Disable the generate button after successful generation
+                    const generateBillBtn = document.getElementById('generateBillBtn');
+                    generateBillBtn.disabled = true;
+                    generateBillBtn.style.opacity = '0.5';
+                    generateBillBtn.style.cursor = 'not-allowed';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error generating bill: ' + error.message);
+            }
+        });
+
+        const printSections = document.querySelectorAll('.print-section');
+        printSections.forEach(section => {
+            section.style.display = 'block'; // Force display during print
+        });
+        
+        // Print bill
+        document.getElementById('printBillBtn').addEventListener('click', function() {
+            // Force displaying print sections before printing
+            const printSections = document.querySelectorAll('.print-section');
+            printSections.forEach(section => {
+                section.style.display = 'block';
+            });
+            
+            // Add a small delay to ensure elements are visible
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        });
+
+        // Reset form
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+                // In your resetBtn click handler, add:
+                printBillBtn.disabled = true;
+                printBillBtn.classList.add('btn-disabled');
+                printBillBtn.style.opacity = '0.5';
+                printBillBtn.style.cursor = 'not-allowed';
+
+                const generateBillBtn = document.getElementById('generateBillBtn');
+                generateBillBtn.disabled = false;
+                generateBillBtn.style.opacity = '1';
+                generateBillBtn.style.cursor = 'pointer';
+
+                // Check if element exists before accessing it
+                if (document.getElementById('patientId')) {
+                    document.getElementById('patientId').value = '';
+                }
+                document.getElementById('patientName').value = '';
+                document.getElementById('patientContact').value = '';
+                document.getElementById('doctorName').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('discount').value = 0;
+                document.getElementById('tax').value = 0;
+                document.getElementById('paymentMethod').selectedIndex = 0;
+                document.getElementById('paymentStatus').selectedIndex = 0;
+                
+                const tbody = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+                while (tbody.firstChild) {
+                    tbody.removeChild(tbody.firstChild);
+                }
+                
+                calculateTotals();
+            }
+        });
+        
+        window.csrftoken = getCookie('csrftoken');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,550 @@
+{% extends 'superadmin/base.html' %}
+
+{% block title %}branch_creation{% endblock %}
+
+{% block content %}
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Branch Management</title>
+ 
+
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+  
+    <h1>Branch Management</h1>
+
+    <!-- Add Branch Button -->
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addBranchModal">Add Branch</button>
+
+    <!-- Branch Table -->
+    <table id="branchTable" class="table table-bordered display">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Phone Number</th>
+          <th>Email</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Add Branch Modal -->
+  <div class="modal fade" id="addBranchModal" tabindex="-1" aria-labelledby="addBranchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="addBranchForm">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="addBranchModalLabel">Add Branch</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="branchCode" class="form-label">Code</label>
+              <input type="text" name="name" class="form-control" id="branchCode" required>
+            </div>
+            <div class="mb-3">
+              <label for="branchName" class="form-label">Name</label>
+              <input type="text" name="name" class="form-control" id="branchName" required>
+            </div>
+            <div class="mb-3">
+              <label for="branchAddress" class="form-label">Address</label>
+              <input type="text" name="address" class="form-control" id="branchAddress">
+            </div>
+            <div class="mb-3">
+              <label for="branchPhoneNumber" class="form-label">Phone Number</label>
+              <input type="text" name="phone_number" class="form-control" id="branchPhoneNumber" required>
+            </div>
+            <div class="mb-3">
+              <label for="branchEmail" class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" id="branchEmail">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<!-- Edit Branch Modal -->
+<div class="modal fade" id="editBranchModal" tabindex="-1" aria-labelledby="editBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editBranchForm" onsubmit="return validateForm()">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editBranchModalLabel">Edit Branch</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- <div class="mb-3">
+            <label for="editBranchCode" class="form-label">Code</label>
+            <input type="text" name="name" class="form-control" id="editBranchCode" required>
+          </div> -->
+          <div class="mb-3">
+            <label for="editBranchName" class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" id="editBranchName" required maxlength="100">
+            <div class="invalid-feedback" id="nameError"></div>
+          </div>
+          <div class="mb-3">
+            <label for="editBranchAddress" class="form-label">Address</label>
+            <input type="text" name="address" class="form-control" id="editBranchAddress" maxlength="200">
+            <div class="invalid-feedback" id="addressError"></div>
+          </div>
+          <div class="mb-3">
+            <label for="editBranchPhoneNumber" class="form-label">Phone Number</label>
+            <input type="tel" name="phone_number" class="form-control" id="editBranchPhoneNumber" required pattern="^\+?[1-9]\d{1,14}$" maxlength="15">
+            <div class="invalid-feedback" id="phoneError"></div>
+          </div>
+          <div class="mb-3">
+            <label for="editBranchEmail" class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" id="editBranchEmail" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$">
+            <div class="invalid-feedback" id="emailError"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function validateForm() {
+    let isValid = true;
+
+    // Name validation
+    const name = document.getElementById('editBranchName');
+    const nameError = document.getElementById('nameError');
+    if (!name.value.trim()) {
+      nameError.textContent = 'Name is required.';
+      name.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      nameError.textContent = '';
+      name.classList.remove('is-invalid');
+    }
+
+    // Address validation (optional)
+    const address = document.getElementById('editBranchAddress');
+    const addressError = document.getElementById('addressError');
+    if (address.value.trim() && address.value.length > 200) {
+      addressError.textContent = 'Address cannot exceed 200 characters.';
+      address.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      addressError.textContent = '';
+      address.classList.remove('is-invalid');
+    }
+
+    // Phone Number validation
+    const phoneNumber = document.getElementById('editBranchPhoneNumber');
+    const phoneError = document.getElementById('phoneError');
+    const phonePattern = /^\+?[1-9]\d{1,14}$/;
+    if (!phoneNumber.value.match(phonePattern)) {
+      phoneError.textContent = 'Please enter a valid phone number.';
+      phoneNumber.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      phoneError.textContent = '';
+      phoneNumber.classList.remove('is-invalid');
+    }
+
+    // Email validation
+    const email = document.getElementById('editBranchEmail');
+    const emailError = document.getElementById('emailError');
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (email.value.trim() && !email.value.match(emailPattern)) {
+      emailError.textContent = 'Please enter a valid email address.';
+      email.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      emailError.textContent = '';
+      email.classList.remove('is-invalid');
+    }
+
+    return isValid;
+  }
+</script>
+
+
+  {% endblock %}
+
+  {% block extra_js %}
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+
+  <style>
+    /* DataTable Wrapper Styles */
+.dataTables_wrapper {
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    margin: 20px auto;
+    width: 95%;
+    max-width: 1400px;
+}
+
+/* Table Base Styles */
+#supplierTable {
+    width: 100% !important;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+/* Header Styles */
+#supplierTable thead th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+    padding: 12px 15px;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+/* Table Body Styles */
+#supplierTable tbody td {
+    padding: 10px 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #eee;
+}
+
+#supplierTable tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+/* Search and Length Controls */
+.dataTables_filter input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-left: 8px;
+    width: 200px;
+}
+
+.dataTables_length select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+/* Enhanced Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.btn-edit,
+.btn-delete {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+}
+
+.btn-edit {
+    background-color: #ffc107;
+    color: #000;
+    border: 1px solid #e0a800;
+}
+
+.btn-edit:hover {
+    background-color: #ffca2c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #c82333;
+}
+
+.btn-delete:hover {
+    background-color: #bb2d3b;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 8px 8px 0 0;
+    padding: 1rem 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-control {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 992px) {
+    .dataTables_wrapper {
+        width: 100%;
+        padding: 15px;
+    }
+
+    #supplierTable thead th,
+    #supplierTable tbody td {
+        padding: 10px;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        min-width: 70px;
+        padding: 5px 10px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .dataTables_wrapper {
+        padding: 10px;
+    }
+
+    #supplierTable {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .dataTables_filter input {
+        width: 150px;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        min-width: 60px;
+        padding: 4px 8px;
+        font-size: 0.9em;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .action-buttons {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        width: 100%;
+    }
+}
+</style>
+  <script>
+    $(document).ready(function () {
+        const table = $('#branchTable').DataTable();
+        const csrfToken = document.querySelector('[name=csrf-token]').content;
+
+        loadBranches();
+
+        // Load Branch Data
+        function loadBranches() {
+            $.ajax({
+                url: '/superadmin/branch/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    table.clear();
+                    data.forEach(function (branch) {
+                        table.row.add([
+                            branch.id,
+                            branch.branch_code,
+                            branch.name,
+                            branch.address || '-',
+                            branch.phone_number,
+                            branch.email || '-',
+                            `<button class="btn btn-warning btn-sm" onclick="editBranch(${branch.id})">Edit</button>
+                             <button class="btn btn-danger btn-sm" onclick="deleteBranch(${branch.id})">Delete</button>`
+                        ]).draw(false);
+                    });
+                },
+                error: function () {
+                    alert("Failed to load branch data.");
+                }
+            });
+        }
+
+        // Add Branch
+        $('#addBranchForm').submit(function (e) {
+            e.preventDefault();
+            const formData = {
+                branch_code: $('#branchCode').val(),
+                name: $('#branchName').val(),
+                address: $('#branchAddress').val(),
+                phone_number: $('#branchPhoneNumber').val(),
+                email: $('#branchEmail').val()
+            };
+            $.ajax({
+                url: '/superadmin/branch/',
+                type: 'POST',
+                contentType: 'application/json',
+                headers: { 'X-CSRFToken': csrfToken },
+                data: JSON.stringify(formData),
+                success: function () {
+                    alert('Branch added successfully!');
+                    $('#addBranchModal').modal('hide');
+                    $('#addBranchForm')[0].reset();
+                    loadBranches();
+                },
+                error: function (response) {
+                    alert('Error: ' + JSON.stringify(response.responseText));
+                }
+            });
+        });
+// Edit Branch
+window.editBranch = function (id) {
+    $.get(`/superadmin/branch/${id}/`, function (data) {
+        // Log data for debugging
+        console.log(data);
+
+        if (data) {
+            // Check if data contains all the expected fields before populating the form
+            if (data.branch_code) {
+                $('#editBranchCode').val(data.branch_code);
+            } else {
+                $('#editBranchCode').val('');
+            }
+            if (data.name) {
+                $('#editBranchName').val(data.name);
+            } else {
+                $('#editBranchName').val('');
+            }
+
+            if (data.address) {
+                $('#editBranchAddress').val(data.address);
+            } else {
+                $('#editBranchAddress').val('');
+            }
+
+            if (data.phone_number) {
+                $('#editBranchPhoneNumber').val(data.phone_number);
+            } else {
+                $('#editBranchPhoneNumber').val('');
+            }
+
+            if (data.email) {
+                $('#editBranchEmail').val(data.email);
+            } else {
+                $('#editBranchEmail').val('');
+            }
+
+            // Set the form's data-id attribute to the branch ID for easy identification on form submission
+            $('#editBranchForm').attr('data-id', id);
+
+            // Show the modal
+            const myModal = new bootstrap.Modal(document.getElementById('editBranchModal'));
+            myModal.show();
+        }
+    }).fail(function () {
+        alert("Error loading data for editing.");
+    });
+};
+
+
+        // Update Branch
+        $('#editBranchForm').submit(function (e) {
+            e.preventDefault();
+            const id = $(this).attr('data-id');
+            const formData = {
+                branch_code: $('#editBranchCode').val(),
+                name: $('#editBranchName').val(),
+                address: $('#editBranchAddress').val(),
+                phone_number: $('#editBranchPhoneNumber').val(),
+                email: $('#editBranchEmail').val()
+            };
+            $.ajax({
+                url: `/superadmin/branch/${id}/`,
+                type: 'PUT',
+                headers: { 'X-CSRFToken': csrfToken },
+
+                contentType: 'application/json',
+                headers: { 'X-CSRFToken': csrfToken },
+                data: JSON.stringify(formData),
+                success: function () {
+                    alert('Branch updated successfully!');
+                    $('#editBranchModal').modal('hide');
+                    loadBranches();
+                },
+                error: function (response) {
+                    alert('Error: ' + JSON.stringify(response.responseText));
+                }
+            });
+        });
+
+        // Delete Branch
+        window.deleteBranch = function (id) {
+            if (confirm('Are you sure you want to delete this branch?')) {
+                $.ajax({
+                    url: `/superadmin/branch/${id}/`,
+                    type: 'POST',
+
+                    headers: { 'X-CSRFToken': csrfToken },
+                    success: function () {
+                        alert('Branch deleted successfully!');
+                        loadBranches();
+                    },
+                    error: function () {
+                        alert('Error deleting branch.');
+                    }
+                });
+            }
+        };
+
+        // Reset forms when modals close
+        $('#addBranchModal, #editBranchModal').on('hidden.bs.modal', function () {
+            $(this).find('form')[0].reset();
+        });
+    });
+</script>
+
+{% endblock %}

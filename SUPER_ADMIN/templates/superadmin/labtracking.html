@@ -1,0 +1,581 @@
+{% extends "superadmin/base.html" %}
+
+{% block title %}Lab Orders Tracker | Dr. Arif's Dental Clinic{% endblock %}
+
+{% block content %}
+
+<div class="card" style="box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+    <div class="card-header" style="background: linear-gradient(135deg, #87CEEB, #B0E0E6); padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #2c3e50; font-size: 1.5rem;">Laboratory Orders Tracker</h2>
+        <button id="addNewOrderBtn" style="background-color: #ffffff; color: #2c3e50; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+            <i class="fas fa-plus" style="margin-right: 5px;"></i> New Order
+        </button>
+    </div>
+    
+    <div class="card-body" style="padding: 20px;">
+        <!-- Filters Section -->
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="patientFilter" style="display: block; margin-bottom: 5px; font-weight: 500;">Patient</label>
+                    <input type="text" id="patientFilter" placeholder="Search by patient name" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="labFilter" style="display: block; margin-bottom: 5px; font-weight: 500;">Lab Name</label>
+                    <input type="text" id="labFilter" placeholder="Search by lab name" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="statusFilter" style="display: block; margin-bottom: 5px; font-weight: 500;">Status</label>
+                    <select id="statusFilter" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="canceled">Canceled</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="dateFilter" style="display: block; margin-bottom: 5px; font-weight: 500;">Date Range</label>
+                    <input type="date" id="dateFilter" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="align-self: flex-end;">
+                    <button id="applyFilters" style="background-color: #87CEEB; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-filter" style="margin-right: 5px;"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Orders Table -->
+        <div style="overflow-x: auto;">
+            <table id="labOrdersTable" class="display" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th>Order ID</th>
+                        <th>Patient</th>
+                        <th>Lab Name</th>
+                        <th>Item Description</th>
+                        <th>Amount</th>
+                        <th>Ordered Date</th>
+                        <th>Expected Delivery</th>
+                        <th>Actual Delivery</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DataTable will populate this -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Adding/Editing Lab Order -->
+<div id="labOrderModal" style="display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; position: relative;">
+        <span id="closeModal" style="position: absolute; right: 15px; top: 10px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <h3 id="modalTitle" style="margin-top: 0; color: #2c3e50;">New Lab Order</h3>
+        
+        <form id="labOrderForm" style="margin-top: 20px;">
+            <input type="hidden" id="orderId" value="">
+            
+            <div style="margin-bottom: 15px;">
+                <label for="patientId" style="display: block; margin-bottom: 5px; font-weight: 500;">Patient</label>
+                <select id="patientId" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                    <option value="">Select Patient</option>
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="labName" style="display: block; margin-bottom: 5px; font-weight: 500;">Lab Name</label>
+                <input type="text" id="labName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="itemDescription" style="display: block; margin-bottom: 5px; font-weight: 500;">Item Description</label>
+                <input type="text" id="itemDescription" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="amount" style="display: block; margin-bottom: 5px; font-weight: 500;">Amount</label>
+                <input type="number" id="amount" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label for="orderedDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Ordered Date</label>
+                    <input type="date" id="orderedDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                </div>
+                <div style="flex: 1;">
+                    <label for="expectedDeliveryDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Expected Delivery</label>
+                    <input type="date" id="expectedDeliveryDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="actualDeliveryDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Actual Delivery Date</label>
+                <input type="date" id="actualDeliveryDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="status" style="display: block; margin-bottom: 5px; font-weight: 500;">Status</label>
+                <select id="status" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="canceled">Canceled</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="notes" style="display: block; margin-bottom: 5px; font-weight: 500;">Notes</label>
+                <textarea id="notes" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;" placeholder="Additional notes or comments"></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" id="cancelBtn" style="background-color: #f2f2f2; border: 1px solid #ddd; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button type="submit" id="saveBtn" style="background-color: #87CEEB; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Order Details Modal -->
+<div id="viewOrderModal" style="display: none; position: fixed; z-index: 2100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+    <div style="background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 600px; position: relative;">
+        <span id="closeViewModal" style="position: absolute; right: 15px; top: 10px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <h3 style="margin-top: 0; color: #2c3e50;">Lab Order Details</h3>
+        
+        <div id="orderDetails" style="margin-top: 20px;">
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Order ID:</div>
+                <div id="viewOrderId"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Patient:</div>
+                <div id="viewPatient"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Lab Name:</div>
+                <div id="viewLabName"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Item Description:</div>
+                <div id="viewItemDescription"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Amount:</div>
+                <div id="viewAmount"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Ordered Date:</div>
+                <div id="viewOrderedDate"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Expected Delivery:</div>
+                <div id="viewExpectedDeliveryDate"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Actual Delivery:</div>
+                <div id="viewActualDeliveryDate"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Status:</div>
+                <div id="viewStatus"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <div style="font-weight: 500; width: 150px;">Notes:</div>
+                <div id="viewNotes"></div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px;">
+                <div style="font-weight: 500; width: 150px;">Created:</div>
+                <div id="viewCreated"></div>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button type="button" id="editOrderBtn" style="background-color: #87CEEB; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button type="button" id="closeViewBtn" style="background-color: #f2f2f2; border: 1px solid #ddd; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables core and extensions -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+    // Store patients data globally
+    let patientsData = [];
+    
+    // Populate patient dropdown and store data
+    populatePatientDropdown();
+    
+    // Initialize DataTable
+    const table = $('#labOrdersTable').DataTable({
+        ajax: {
+            url: '/superadmin/lab-orders/', // Endpoint to fetch lab orders
+            dataSrc: ''
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'patient_name' }, // Use patient_name directly from JSON
+            { data: 'lab_name' },
+            { data: 'item_description' },
+            { data: 'amount', render: function(data) { return '₹' + parseFloat(data).toFixed(2); } },
+            { data: 'ordered_date', render: function(data) { return formatDate(data); } },
+            { data: 'expected_delivery_date', render: function(data) { return formatDate(data); } },
+            { data: 'actual_delivery_date', render: function(data) { return formatDate(data); } },
+            { data: 'status', render: function(data) { return formatStatus(data); } },
+            {
+                data: 'id',
+                render: function(data) {
+                    return `
+                        <button class="viewBtn" data-id="${data}" style="background-color: #87CEEB; color: white; border: none; padding: 5px 8px; border-radius: 4px; margin-right: 5px; cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="editBtn" data-id="${data}" style="background-color: #ffc107; color: white; border: none; padding: 5px 8px; border-radius: 4px; margin-right: 5px; cursor: pointer;">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="deleteBtn" data-id="${data}" style="background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                }
+            }
+        ],
+        columnDefs: [
+            { targets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], className: 'dt-center' } // Center align all columns
+        ],
+        responsive: true,
+        paging: true,
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        dom: 'Bfrtip',
+        buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+    });
+
+    // Function to populate patient dropdown
+    function populatePatientDropdown() {
+        $.ajax({
+            url: '/reception/get_dropdown_data/',
+            type: 'GET',
+            success: function(response) {
+
+
+                // Extract the patients array from the response
+                patientsData = response.patients || []; // Use patients array or default to empty array
+
+                const dropdown = $('#patientId');
+                dropdown.empty();
+                dropdown.append('<option value="">Select Patient</option>');
+
+                // Ensure patientsData is an array before using forEach
+                if (Array.isArray(patientsData)) {
+                    patientsData.forEach(function(patient) {
+                        dropdown.append(`<option value="${patient.id}">${patient.name}</option>`);
+                    });
+                } else {
+
+                }
+            },
+            error: function(xhr) {
+
+                alert('Failed to load dropdown data. Please refresh the page.');
+            }
+        });
+    }
+    
+    // Format date for display
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    }
+
+    // Format status for display
+    function formatStatus(status) {
+        const statusMap = {
+            'pending': '<span style="background-color: #ffeeba; color: #856404; padding: 3px 8px; border-radius: 4px;">Pending</span>',
+            'in_progress': '<span style="background-color: #b8daff; color: #004085; padding: 3px 8px; border-radius: 4px;">In Progress</span>',
+            'completed': '<span style="background-color: #c3e6cb; color: #155724; padding: 3px 8px; border-radius: 4px;">Completed</span>',
+            'delivered': '<span style="background-color: #d4edda; color: #155724; padding: 3px 8px; border-radius: 4px;">Delivered</span>',
+            'canceled': '<span style="background-color: #f5c6cb; color: #721c24; padding: 3px 8px; border-radius: 4px;">Canceled</span>'
+        };
+        return status && statusMap[status] ? statusMap[status] : '<span style="background-color: #e2e3e5; color: #383d41; padding: 3px 8px; border-radius: 4px;">Unknown</span>';
+    }
+
+    // Attach event listeners to buttons
+    $('#labOrdersTable').on('click', '.viewBtn', function() {
+        const orderId = $(this).data('id');
+        const rowData = table.row($(this).closest('tr')).data();
+        viewOrder(orderId, rowData);
+    });
+
+    $('#labOrdersTable').on('click', '.editBtn', function() {
+        const orderId = $(this).data('id');
+        const rowData = table.row($(this).closest('tr')).data();
+
+        editOrder(orderId, rowData);
+    });
+
+    $('#labOrdersTable').on('click', '.deleteBtn', function() {
+        const orderId = $(this).data('id');
+        if (confirm('Are you sure you want to delete this lab order?')) {
+            deleteOrder(orderId);
+        }
+    });
+
+    function viewOrder(orderId, order) {
+        if (!order) {
+            alert('Error: Order data not found');
+            return;
+        }
+        
+        $('#viewOrderId').text(order.id);
+        $('#viewPatient').text(order.patient_name);
+        $('#viewLabName').text(order.lab_name);
+        $('#viewItemDescription').text(order.item_description);
+        $('#viewAmount').text('₹' + parseFloat(order.amount).toFixed(2));
+        $('#viewOrderedDate').text(formatDate(order.ordered_date));
+        $('#viewExpectedDeliveryDate').text(formatDate(order.expected_delivery_date));
+        $('#viewActualDeliveryDate').text(formatDate(order.actual_delivery_date));
+        $('#viewStatus').html(formatStatus(order.status));
+        $('#viewNotes').text(order.notes || 'None');
+        $('#viewCreated').text(formatDate(order.created_at));
+        
+        // Store order data directly
+        $('#editOrderBtn').data('orderId', orderId);
+        $('#editOrderBtn').attr('data-order-id', orderId);
+        
+        $('#viewOrderModal').show();
+    }
+    
+    function editOrder(orderId, order) {
+
+        if (!order) {
+
+            $.ajax({
+                url: `/superadmin/lab-orders/${orderId}/`,
+                type: 'GET',
+                success: function(orderData) {
+
+                    populateEditForm(orderData);
+                },
+                error: function(xhr) {
+
+                    alert('Error fetching order data: ' + xhr.responseText);
+                }
+            });
+        } else {
+
+            populateEditForm(order);
+        }
+    }
+    
+    function populateEditForm(order) {
+
+        $('#orderId').val(order.id);
+
+        // Ensure patientsData is an array before using find
+        if (Array.isArray(patientsData)) {
+            const patient = patientsData.find(p => p.name === order.patient_name);
+            if (patient) {
+                $('#patientId').val(patient.id);
+            } else {
+                $('#patientId').val('');
+            }
+        } else {
+
+            $('#patientId').val('');
+        }
+
+        $('#labName').val(order.lab_name);
+        $('#itemDescription').val(order.item_description);
+        $('#amount').val(order.amount);
+        $('#orderedDate').val(order.ordered_date ? new Date(order.ordered_date).toISOString().split('T')[0] : '');
+        $('#expectedDeliveryDate').val(order.expected_delivery_date ? new Date(order.expected_delivery_date).toISOString().split('T')[0] : '');
+        $('#actualDeliveryDate').val(order.actual_delivery_date ? new Date(order.actual_delivery_date).toISOString().split('T')[0] : '');
+        $('#status').val(order.status);
+        $('#notes').val(order.notes || '');
+        $('#modalTitle').text('Edit Lab Order');
+        $('#labOrderModal').show();
+    }
+        
+    // Delete order
+    function deleteOrder(orderId) {
+        $.ajax({
+            url: `/superadmin/lab-orders/${orderId}/`,
+            type: 'DELETE',
+            headers: {
+                "X-CSRFToken": getCSRFToken()
+            },
+            success: function() {
+                table.ajax.reload(); // Reload DataTable
+                alert('Lab order deleted successfully');
+            },
+            error: function(xhr) {
+                alert('Error deleting lab order: ' + xhr.responseText);
+            }
+        });
+    }
+
+    // Save order (create or update)
+    function saveOrder() {
+        const orderId = $('#orderId').val();
+        const isUpdate = orderId !== '';
+
+        const orderData = {
+            patient: $('#patientId').val(),
+            lab_name: $('#labName').val(),
+            item_description: $('#itemDescription').val(),
+            amount: $('#amount').val(),
+            ordered_date: $('#orderedDate').val(),
+            expected_delivery_date: $('#expectedDeliveryDate').val(),
+            actual_delivery_date: $('#actualDeliveryDate').val() || null,
+            status: $('#status').val(),
+            notes: $('#notes').val()
+        };
+
+        // Validate required fields
+        if (!orderData.patient || !orderData.lab_name || !orderData.item_description || 
+            !orderData.amount || !orderData.ordered_date || !orderData.expected_delivery_date || !orderData.status) {
+            alert('Please fill all required fields');
+            return;
+        }
+
+        $.ajax({
+            url: isUpdate ? `/superadmin/lab-orders/${orderId}/` : '/superadmin/lab-orders/',
+            type: isUpdate ? 'PUT' : 'POST',
+            data: JSON.stringify(orderData),
+            contentType: 'application/json',
+            headers: {
+                "X-CSRFToken": getCSRFToken()
+            },
+            success: function(data) {
+                // Close modal
+                $('#labOrderModal').hide();
+
+                // Reload DataTable
+                table.ajax.reload();
+
+                alert(isUpdate ? 'Lab order updated successfully' : 'Lab order created successfully');
+            },
+            error: function(xhr) {
+                alert('Error saving lab order: ' + xhr.responseText);
+            }
+        });
+    }
+
+    // Get CSRF token
+    function getCSRFToken() {
+        return $('meta[name="csrf-token"]').attr('content');
+    }
+
+    // Apply filters with better date handling
+    $('#applyFilters').click(function() {
+        const patientFilter = $('#patientFilter').val().toLowerCase();
+        const labFilter = $('#labFilter').val().toLowerCase();
+        const statusFilter = $('#statusFilter').val();
+        const dateFilter = $('#dateFilter').val();
+
+        // Custom filtering function for dates
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                // Only apply date filter if one is provided
+                if (!dateFilter) return true;
+                
+                const orderDate = new Date(data[5].replace('N/A', '')); // Column 5 is ordered_date
+                const filterDate = new Date(dateFilter);
+                
+                // Skip invalid dates (like N/A)
+                if (isNaN(orderDate.getTime())) return false;
+                
+                // Compare dates - only show if on or after filter date
+                return orderDate.setHours(0,0,0,0) >= filterDate.setHours(0,0,0,0);
+            }
+        );
+        
+        // Apply text filters
+        table.column(1).search(patientFilter);
+        table.column(2).search(labFilter);
+        table.column(8).search(statusFilter);
+        
+        // Draw with all filters applied
+        table.draw();
+        
+        // Remove the custom date filter after use
+        $.fn.dataTable.ext.search.pop();
+    });
+
+    // New order button
+    $('#addNewOrderBtn').click(function() {
+        // Reset form
+        $('#orderId').val('');
+        $('#labOrderForm')[0].reset();
+
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        $('#orderedDate').val(today);
+
+        // Update modal title
+        $('#modalTitle').text('New Lab Order');
+
+        // Show modal
+        $('#labOrderModal').show();
+    });
+
+    // Cancel button
+    $('#cancelBtn, #closeModal').click(function() {
+        $('#labOrderModal').hide();
+    });
+
+    // Close view modal
+    $('#closeViewBtn, #closeViewModal').click(function() {
+        $('#viewOrderModal').hide();
+    });
+
+    // Edit from view modal
+    $('#editOrderBtn').click(function() {
+        const orderId = $(this).attr('data-order-id');
+        
+        // Close view modal first
+        $('#viewOrderModal').hide();
+        
+        // Fetch the latest data for this order
+        $.ajax({
+            url: `/superadmin/lab-orders/${orderId}/`,
+            type: 'GET',
+            success: function(orderData) {
+                populateEditForm(orderData);
+            },
+            error: function(xhr) {
+                alert('Error fetching order data: ' + xhr.responseText);
+            }
+        });
+    });
+
+    // Save button
+    $('#labOrderForm').submit(function(e) {
+        e.preventDefault();
+        saveOrder();
+    });
+});
+</script>
+{% endblock %}

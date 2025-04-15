@@ -1,0 +1,422 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Arif's Dental Clinic | {% block title %}Dashboard{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- jQuery must be loaded first -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Added Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Keep existing root variables */
+        :root {
+            --primary-color: #87CEEB;
+            --secondary-color: #B0E0E6;
+            --text-color: #2c3e50;
+            --hover-color: #5dade2;
+            --shadow-color: rgba(0,0,0,0.1);
+            --white: #ffffff;
+        }
+
+        /* Preserve base template styles without modification */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            box-shadow: 2px 0 10px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            padding-top: 15px;
+        }
+
+        .sidebar-logo {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .sidebar-logo img {
+            width: 80px;
+            height: auto;
+        }
+
+        .sidebar-menu {
+            flex-grow: 1;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Modify menu-item without breaking existing styles */
+        .menu-item {
+            padding: 8px 15px;
+            color: var(--text-color);
+            background: var(--white);
+            margin: 5px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Add icon styles */
+        .menu-item i {
+            margin-right: 10px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            background: var(--hover-color);
+            color: var(--white);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 15px;
+            box-shadow: 0 3px 10px var(--shadow-color);
+            width: calc(100% - 220px);
+            margin-left: 220px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.5rem;
+        }
+
+        /* New class for mobile menu toggle button */
+        .drarift-mobile-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            margin-right: 15px;
+        }
+
+        /* Scoped Profile Dropdown Styles with unique class names */
+        .drarift-profile-container {
+            position: relative;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+        
+        .drarift-profile-icon {
+            font-size: 1rem;
+            color: #2c3e50;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .drarift-profile-icon:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            background-color: #f8f9fa;
+        }
+
+        .drarift-dropdown-menu {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 220px;
+            z-index: 1001;
+            display: none;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .drarift-dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .drarift-dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .drarift-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .drarift-dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+        }
+
+        .drarift-dropdown-item i {
+            margin-right: 12px;
+            width: 18px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .drarift-dropdown-item span {
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Logout option specific styling */
+        #drarift-logout-dropdown {
+            border-top: 1px solid #e9ecef;
+            color: #dc3545;
+        }
+
+        #drarift-logout-dropdown i {
+            color: #dc3545;
+        }
+
+        #drarift-logout-dropdown:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin-left: 220px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        }
+
+        .footer {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            padding: 15px;
+            text-align: center;
+            color: var(--text-color);
+            box-shadow: 0 -3px 10px var(--shadow-color);
+            width: calc(100% - 220px);
+            margin-left: 220px;
+            font-size: 14px;
+        }
+
+        /* Mobile overlay with unique class name */
+        .drarift-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .drarift-overlay.active {
+            display: block;
+        }
+
+        /* Responsive Styles with namespaced classes */
+        @media (max-width: 768px) {
+            .drarift-mobile-toggle {
+                display: block;
+            }
+            
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+            
+            .sidebar.drarift-active {
+                transform: translateX(0);
+            }
+            
+            .header, .main-container, .footer {
+                margin-left: 0;
+                width: 100%;
+                transition: all 0.3s ease;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .drarift-dropdown-menu {
+                width: 180px;
+                right: 0;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Overlay with unique class -->
+    <div class="drarift-overlay" id="drarift-sidebar-overlay"></div>
+    
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img src="{% static 'assets/images/logo-blue.png' %}" alt="Clinic Logo" />
+        </div>
+        <div class="sidebar-menu">
+            <a href="/reception/dashboard/" class="menu-item"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/reception/singlepage/" class="menu-item"><i class="fas fa-user-injured"></i> Manage Patients</a>
+            <!-- <a href="/reception/enquiries/" class="menu-item"><i class="fas fa-question-circle"></i> Manage Enquiries</a>
+            <a href="/reception/bookings/" class="menu-item"><i class="fas fa-calendar-alt"></i> Manage Bookings</a> -->
+            <a href="/reception/billing-options/" class="menu-item"><i class="fas fa-file-invoice-dollar"></i> Manage Billings</a>
+            <a href="/reception/medicineslist/" class="menu-item"><i class="fas fa-pills"></i> Manage Medicines</a>
+            <!-- <button id="logout-option" class="menu-item"><i class="fas fa-sign-out-alt"></i> Logout</button> -->
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center;">
+            <div class="drarift-mobile-toggle" id="drarift-sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <h1 class="clinic-name">Dr. Arif's Dental Clinic</h1>
+        </div>
+
+        <!-- Profile Dropdown with unique class names -->
+        <div class="drarift-profile-container">
+            <div class="drarift-profile-icon" id="drarift-profile-toggle">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="drarift-dropdown-menu" id="drarift-profile-dropdown">
+                <a href="/reception/profile/edit/{{ user.id }}/" class="drarift-dropdown-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Edit Profile</span>
+                </a>
+                <a href="/reception/change-password/" class="drarift-dropdown-item">
+                    <i class="fas fa-key"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" id="drarift-logout-dropdown" class="drarift-dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div><strong>Dr. Arif's Dental Clinic</strong></div>
+        <div><i class="fas fa-phone"></i> +91-9087654321 | <i class="fas fa-envelope"></i> info@drarifdentistry.com</div>
+        <div>© 2025 Dr. Arif's Dental Clinic. All rights reserved.</div>
+    </footer>
+
+    <!-- Isolated JavaScript to avoid conflicts -->
+    <script>
+        (function() {
+            // Use an IIFE to isolate variables and functions
+            
+            // Profile dropdown toggle
+            document.getElementById("drarift-profile-toggle").addEventListener("click", function(e) {
+                document.getElementById("drarift-profile-dropdown").classList.toggle("show");
+                e.stopPropagation();
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function(e) {
+                var toggle = document.getElementById("drarift-profile-toggle");
+                var dropdown = document.getElementById("drarift-profile-dropdown");
+                
+                if (toggle !== e.target && !toggle.contains(e.target) && dropdown !== e.target && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove("show");
+                }
+            });
+            
+            // Mobile sidebar toggle
+            document.getElementById("drarift-sidebar-toggle").addEventListener("click", function() {
+                document.getElementById("sidebar").classList.toggle("drarift-active");
+                document.getElementById("drarift-sidebar-overlay").classList.toggle("active");
+            });
+            
+            // Close sidebar when clicking on overlay
+            document.getElementById("drarift-sidebar-overlay").addEventListener("click", function() {
+                document.getElementById("sidebar").classList.remove("drarift-active");
+                document.getElementById("drarift-sidebar-overlay").classList.remove("active");
+            });
+            
+            // Logout option in dropdown - use the existing jQuery AJAX setup
+            document.getElementById("drarift-logout-dropdown").addEventListener("click", function(e) {
+                e.preventDefault();
+                
+                // Reuse the existing logout function
+                var confirmLogout = confirm("Are you sure you want to log out?");
+                if (confirmLogout) {
+                    // Use the existing jQuery for AJAX to maintain compatibility
+                    $.ajax({
+                        url: "/reception/logout/",
+                        type: "POST",
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                        },
+                        success: function(response) {
+                            window.location.href = "/reception/login/";
+                        },
+                        error: function(xhr, status, error) {
+                            alert("Logout failed. Please try again.");
+                            console.error("Logout error:", error);
+                        }
+                    });
+                }
+            });
+            
+        })(); // End of IIFE
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
