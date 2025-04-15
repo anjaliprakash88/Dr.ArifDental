@@ -145,7 +145,6 @@ class TodayPreview(APIView):
         booking = get_object_or_404(PatientBooking, id=booking_id)
         patient = booking.patient
         serializer = TodayPreviewSerializer(booking)
-        print("data:", serializer.data)
 
         # 🔽 Add this: Query your dentition data
         dentitions = Dentition.objects.filter(booking_id=booking.id)
