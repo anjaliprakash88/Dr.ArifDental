@@ -19,7 +19,8 @@ from .serializer import (DoctorLoginSerializer,
                          DentitionSerializer,
                          TodayPreviewSerializer,
                          DentitionTreatmentSerializer,
-                         DiagnosisSerializer)
+                         DiagnosisSerializer,
+                         InvestigationSerializer)
 from RECEPTION.serializer import PatientBookingSerializer
 from SUPER_ADMIN.models import Doctor, PharmaceuticalMedicine
 from RECEPTION.models import PatientBooking, Patient
@@ -36,6 +37,23 @@ from rest_framework.permissions import IsAuthenticated
 import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
+
+
+class DeleteInvestigationView(APIView):
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+
+    def post(self, request, id, format=None):
+        investigation = get_object_or_404(Investigation, id=id)
+        serializer = InvestigationSerializer(investigation)
+        investigation.delete()
+
+        return Response(
+            {
+                "message": "Investigation image deleted successfully.",
+                "deleted_image": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
 
 # -------------LAST APPOINTMENT PREVIEW------------
 class LastAppointmentPreview(APIView):
