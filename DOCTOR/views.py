@@ -46,7 +46,6 @@ class DeleteInvestigationView(APIView):
         investigation = get_object_or_404(Investigation, id=id)
         serializer = InvestigationSerializer(investigation)
         investigation.delete()
-
         return Response(
             {
                 "message": "Investigation image deleted successfully.",
@@ -326,7 +325,7 @@ class DentalExaminationCheckup(APIView):
             )
 
             # Create Dentition instance
-            dentition = Dentition.objects.update_or_create(
+            dentition, created = Dentition.objects.update_or_create(
                 patient=patient,
                 booking=booking,
                 selected_teeth=selected_teeth,
