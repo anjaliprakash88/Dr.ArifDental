@@ -1348,7 +1348,6 @@ $(document).ready(function() {
             headers: { 'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
             success: function (response) {
                 alert('Medicine saved successfully!');
-                $('#medicine-items-container').empty();
                 addMedicineItem();
             },
             error: function (xhr) {
@@ -1560,48 +1559,40 @@ $(document).ready(function () {
         $("#selectedTreatment").val("").removeAttr("style");
     }
 
-$(document).on('click', '.remove-dentition', function (e) {
-    e.stopPropagation();
-    const itemId = $(this).data('id');
+    $(document).on('click', '.remove-dentition', function (e) {
+        e.stopPropagation();
+        const itemId = $(this).data('id');
 
-    // Find the dentition item
-    const $dentitionItem = $(`#dentition-item-${itemId}`);
+        const $dentitionItem = $(`#dentition-item-${itemId}`);
 
-    if ($dentitionItem.length === 0) {
-        console.error("Dentition item not found:", itemId);
-        return;
-    }
+        if ($dentitionItem.length === 0) {
+            console.error("Dentition item not found:", itemId);
+            return;
+        }
 
-    // Get the teeth before removal
-    const teethStr = $dentitionItem.find("input[name='selected_teeth[]']").val();
-    const treatment = $dentitionItem.find("input[name='selected_treatment[]']").val();
+        const teethStr = $dentitionItem.find("input[name='selected_teeth[]']").val();
+        const treatment = $dentitionItem.find("input[name='selected_treatment[]']").val();
 
-    // If the removed item was the active form, reset selection state
-    if (activeFormId === itemId) {
-        resetSelections();
-        activeFormId = null;
-    }
+        if (activeFormId === itemId) {
+            resetSelections();
+            activeFormId = null;
+        }
 
-    // Remove the card from DOM
-    $dentitionItem.remove();
+        $dentitionItem.remove();
 
-    // Reset ONLY the teeth from this specific row to healthy
-    if (teethStr) {
-        const teethArr = teethStr.split(",").map(t => t.trim());
+        if (teethStr) {
+            const teethArr = teethStr.split(",").map(t => t.trim());
 
-        teethArr.forEach(toothNum => {
-            const $tooth = $(`.tooth[data-tooth="${toothNum}"]`);
-            if ($tooth.length) {
-                $tooth.removeClass("selected");
-                $tooth.attr("data-status", "Healthy");
-                $tooth.css("background-color", "#229954"); // Green for healthy
-            }
-        });
-    }
-
-    // IMPORTANT: Do NOT call updateToothColorsFromForms() or applyRemainingTreatments()
-    // We only want to reset the specific teeth from this row
-});
+            teethArr.forEach(toothNum => {
+                const $tooth = $(`.tooth[data-tooth="${toothNum}"]`);
+                if ($tooth.length) {
+                    $tooth.removeClass("selected");
+                    $tooth.attr("data-status", "Healthy");
+                    $tooth.css("background-color", "#229954"); // Green for healthy
+                }
+            });
+        }
+    });
 
 
     $("#dentition-container").submit(function (event) {
@@ -1635,7 +1626,6 @@ $(document).on('click', '.remove-dentition', function (e) {
             data: JSON.stringify({ dentitions: dentitionData }),
             success: function (response) {
                 alert("Dentition data saved successfully!");
-                $("#dentition-items-container").empty();
                 addDentitionItem();
                 resetSelections();
                 activeFormId = 0;

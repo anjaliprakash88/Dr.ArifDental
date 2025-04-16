@@ -274,12 +274,11 @@ class DentalExaminationCheckup(APIView):
         booking = get_object_or_404(PatientBooking, id=booking_id)
         patient = booking.patient
 
-        # Fetch or create the examination entry
         examination = DentalExamination.objects.filter(patient=patient, booking=booking).order_by('-created_at').first()
         if not examination:
             examination = DentalExamination.objects.create(patient=patient, booking=booking)
 
-        # Update examination fields
+
         examination_fields = [
             "chief_complaints", "history_of_present_illness", "medical_history",
             "personal_history", "general_examination", "general_examination_intraoral",
@@ -302,7 +301,7 @@ class DentalExaminationCheckup(APIView):
             examination.treatment_plan = request.data.get("treatment_plan", examination.treatment_plan)
             examination.save()
 
-        # ✅ Handle investigations (files)
+
         if 'investigation[]' in request.FILES:
             for file in request.FILES.getlist('investigation[]'):
                 if not Investigation.objects.filter(dental_examination=examination, image=file.name).exists():
@@ -311,7 +310,7 @@ class DentalExaminationCheckup(APIView):
                         image=file
                     )
 
-        # ✅ FIX: Get dentitions from request data
+
         dentitions = request.data.get("dentitions", [])  # Ensure it's a list
 
         created_dentitions = []
