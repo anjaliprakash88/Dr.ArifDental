@@ -286,7 +286,7 @@ class DentalExaminationCheckup(APIView):
             "local_examination_extraoral", "soft_tissue", "periodontal_status", "treatment_plan"
         ]
 
-        if any(field in request.data for field in examination_fields):
+        if any(field in request.POST for field in examination_fields):
             examination.chief_complaints = request.data.get("chief_complaints", examination.chief_complaints)
             examination.history_of_present_illness = request.data.get("history_of_present_illness",
                                                                       examination.history_of_present_illness)
@@ -305,10 +305,11 @@ class DentalExaminationCheckup(APIView):
         # ✅ Handle investigations (files)
         if 'investigation[]' in request.FILES:
             for file in request.FILES.getlist('investigation[]'):
-                Investigation.objects.create(
-                    dental_examination=examination,
-                    image=file
-                )
+                if not Investigation.objects.filter(dental_examination=examination, image=file.name).exists():
+                    Investigation.objects.create(
+                        dental_examination=examination,
+                        image=file
+                    )
 
         # ✅ FIX: Get dentitions from request data
         dentitions = request.data.get("dentitions", [])  # Ensure it's a list

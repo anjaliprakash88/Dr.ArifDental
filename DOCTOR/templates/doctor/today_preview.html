@@ -231,61 +231,61 @@
     <tbody>
     <tr>
         <th class="w-25 text-center align-middle">Chief Complaints</th>
-        <td><textarea class="form-control" id="chief_complaints" name="chief_complaints" rows="3">
+        <td><textarea class="form-control" id="chief_complaints" name="chief_complaints" rows="2">
                 {{ data.dental_examination.chief_complaints }}
             </textarea>
         </td>
     <tr>
         <th class="w-25 text-center align-middle">History of Present Illness</th>
         <td>
-            <textarea class="form-control" name="history_of_present_illness" rows="3">
+            <textarea class="form-control" name="history_of_present_illness" rows="2">
                 {{ data.dental_examination.history_of_present_illness }}
             </textarea>
         </td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">Medical History</th>
-        <td><textarea class="form-control" name="medical_history" rows="3">
+        <td><textarea class="form-control" name="medical_history" rows="2">
             {{ data.dental_examination.medical_history }}
         </textarea>
         </td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">Personal History</th>
-        <td><textarea class="form-control" name="personal_history" rows="3">
+        <td><textarea class="form-control" name="personal_history" rows="2">
             {{ data.dental_examination.personal_history }}
         </textarea></td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">General Examination</th>
-        <td><textarea class="form-control" name="general_examination" rows="3">
+        <td><textarea class="form-control" name="general_examination" rows="2">
             {{ data.dental_examination.general_examination }}
         </textarea>
         </td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">General Examination (Intraoral)</th>
-        <td><textarea class="form-control" name="general_examination_intraoral" rows="3">
+        <td><textarea class="form-control" name="general_examination_intraoral" rows="2">
             {{ data.dental_examination.general_examination_intraoral }}
         </textarea>
         </td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">Local Examination (Extraoral)</th>
-        <td><textarea class="form-control" name="local_examination_extraoral" rows="3">
+        <td><textarea class="form-control" name="local_examination_extraoral" rows="2">
             {{ data.dental_examination.local_examination_extraoral  }}
         </textarea>
         </td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">Soft Tissue</th>
-        <td><textarea class="form-control" name="soft_tissue" rows="3">
+        <td><textarea class="form-control" name="soft_tissue" rows="2">
             {{ data.dental_examination.soft_tissue  }}
         </textarea></td>
     </tr>
     <tr>
         <th class="w-25 text-center align-middle">Periodontal Status</th>
-        <td><textarea class="form-control" name="periodontal_status" rows="3">
+        <td><textarea class="form-control" name="periodontal_status" rows="2">
             {{ data.dental_examination.periodontal_status  }}
         </textarea></td>
     </tr>
@@ -791,43 +791,39 @@ $(document).ready(function() {
         console.log("Initializing today's appointment view");
     }
 
-    // --------------------- DENTAL EXAMINATION ---------------------
+// --------------------- DENTAL EXAMINATION ---------------------
     $('#checkupForm').submit(function(event) {
-        event.preventDefault();
-        const formData = new FormData(this);
+    event.preventDefault();
 
-        if (!bookingId) {
-            alert("Booking ID is missing!");
-            return;
-        }
+    const formData = new FormData(this);
 
-        // Add any investigation files
-        const investigationFiles = $('#investigation')[0]?.files;
-        if (investigationFiles) {
-            for (let i = 0; i < investigationFiles.length; i++) {
-                formData.append('investigation[]', investigationFiles[i]);
+    if (!bookingId) {
+        alert("Booking ID is missing!");
+        return;
+    }
+
+    $.ajax({
+        url: `/doctor/checkup/${bookingId}/`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
+        },
+        success: function(response) {
+            if (response.message) {
+                alert(response.message);
             }
+            $('#investigation').val('');
+            location.reload();
+        },
+        error: function(xhr, status, error) {
+            alert('An error occurred: ' + error);
         }
-
-        $.ajax({
-            url: `/doctor/checkup/${bookingId}/`,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val()
-            },
-            success: function(response) {
-                if (response.message) {
-                    alert(response.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                alert('An error occurred: ' + error);
-            }
-        });
     });
+});
+
 
   // --------------------- DENTITION MANAGEMENT ---------------------
 function initializeDentitionChart() {
