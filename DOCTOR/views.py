@@ -83,16 +83,21 @@ class LastAppointmentPreview(APIView):
             all_notes = serialized_data['dentition']['all_notes']
 
         dentitions = Dentition.objects.filter(booking=last_booking)
+        print("Dentitions from current booking:", dentitions)
         past_dentitions = Dentition.objects.filter(booking__patient=patient).order_by('booking__appointment_date')
 
         # Build note map
         from collections import defaultdict
         tooth_notes_map = defaultdict(list)
         for d in past_dentitions:
+            print(
+                f"Dentition for tooths {d.selected_teeth}: treatment={d.treatment}, note={d.note}")
             for tooth_id in d.selected_teeth:  # Loop through each selected tooth
                 if d.note and d.note.strip().lower() != "healthy":
                     note_str = f"{d.booking.appointment_date}: {d.treatment} - {d.note}"
                     tooth_notes_map[tooth_id].append(note_str)
+
+        print("Tooth notes map (past appointments):", json.dumps(tooth_notes_map, indent=2))
 
         # Append history and all_notes for each tooth
         # Safely handle possible missing 'dentition' key

@@ -286,7 +286,7 @@ $(document).on("click", ".btn.last", function () {
     }
 
     $.ajax({
-        url: `/doctor/patient/${patientId}`,  // Make sure this endpoint is set correctly
+        url: `/doctor/patient/${patientId}`,
         type: "GET",
         success: function (data) {
             let html = "";
