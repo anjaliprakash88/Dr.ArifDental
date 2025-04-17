@@ -193,7 +193,7 @@ class ReceptionDashboardAPI(APIView):
                     'id': appointment.id,
                     'time': appointment.appointment_time.strftime('%H:%M'),
                     'time_formatted': appointment.appointment_time.strftime('%I:%M %p'),
-                    'patient_name': f"{appointment.patient.first_name} {appointment.patient.last_name}",
+                    'patient_name': f"{appointment.patient.full_name}",
                     'doctor_name': f"Dr. {appointment.doctor.user.last_name}" if appointment.doctor.user else "",
                     'status': appointment.status,
                     'url': f"/reception/bookings/{appointment.id}/"

@@ -311,11 +311,11 @@
                         </div>
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label class="form-label fw-bold">UPLOAD MED.LICENSE</label>
+                                 <label class="form-label fw-bold">UPLOAD MED.LICENSE</label>
+                                 <input type="file" class="form-control" id="edit_medical_license">
                                 {% if doctors.medical_license %}
-                                <input type="file" class="form-control" id="edit_medical_license">
+                                 <small class="text-muted mt-1 d-block">Current File: {{ doctors.medical_license.name|cut:'media/' }}</small>
                                 {% endif %}
-                                    <small class="text-muted mt-1 d-block">Current File: {{ doctors.medical_license.name|cut:'media/' }}</small>
                             </div>
                         </div>
                         <button type="submit" style="border:None;" class="btn btn-dark w-100 py-2" id="saveProfileChanges">
