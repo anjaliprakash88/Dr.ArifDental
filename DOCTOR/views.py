@@ -577,7 +577,6 @@ class DoctorLoginView(APIView):
             login(request, user)
             Token.objects.get_or_create(user=user)
             return HttpResponseRedirect(reverse('doctor-dashboard'))
-        print(serializer.errors)
         return Response({"message": "Invalid credentials", 'serializer': serializer, 'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
 

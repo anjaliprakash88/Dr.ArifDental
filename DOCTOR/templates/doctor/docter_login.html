@@ -183,7 +183,7 @@
                 height: 24px;
             }
         }
-        /* Loading Spinner */
+
         .loader {
             display: none;
             position: fixed;
@@ -226,19 +226,21 @@
     </style>
 </head>
 <body>
+   <!--------------- BACK ARROW--------------->
     <button class="back-arrow" onclick="window.location.href='{% url 'navigation' %}'">
         <svg viewBox="0 0 24 24">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
         </svg>
     </button>
 
-     <!-- Loading Spinner -->
+     <!---------------LOADING SPINNER--------------->
     <div class="loader" id="loader">
         <div class="loader-inner">
             <div class="spinner"></div>
         </div>
     </div>
 
+    <!---------------LOGIN--------------->
     <div class="login-container">
         <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Pharmacist Icon" class="login-image">
         <h2>DOCTOR LOGIN</h2>
@@ -264,6 +266,7 @@
         </form>
     </div>
 
+    <!---------------SVG--------------->
     <svg class="background-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
         <path fill="#87CEFA" opacity="0.3" d="M0,100 C20,80 40,90 60,60 C80,30 100,50 120,80 L120,100 Z"></path>
         <path fill="#4682B4" opacity="0.2" d="M-10,100 C10,70 30,90 50,50 C70,20 90,40 110,70 L110,100 Z"></path>
@@ -272,21 +275,17 @@
     </svg>
 
     <script>
+<!---------------LOGIN--------------->
         $(document).ready(function() {
             $('#doctorloginForm').on('submit', function(e) {
                 e.preventDefault();
-
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-                // Reset previous errors
                 $(".error").text("");
 
                 const data = {
                     username: $('#model-username').val(),
                     password: $('#model-password').val(),
                 };
-
-                // Show loader before sending AJAX request
                 $('#loader').css('display', 'flex');
 
                 $.ajax({
@@ -303,11 +302,8 @@
                     window.location.href = '/doctor/dashboard/';
                 })
                 .fail(function(xhr) {
-                    // Hide loader
                     $('#loader').css('display', 'none');
-
                     const errors = xhr.responseJSON?.errors || {};
-
                     if (errors.username) {
                         $('#emailError').text(errors.username);
                     }
