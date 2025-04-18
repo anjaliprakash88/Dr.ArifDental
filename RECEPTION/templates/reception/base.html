@@ -14,6 +14,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS bundle (includes Popper.js) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <style>
         /* Keep existing root variables */
@@ -307,6 +316,7 @@
             <a href="/reception/bookings/" class="menu-item"><i class="fas fa-calendar-alt"></i> Manage Bookings</a> -->
             <a href="/reception/billing-options/" class="menu-item"><i class="fas fa-file-invoice-dollar"></i> Manage Billings</a>
             <a href="/reception/medicineslist/" class="menu-item"><i class="fas fa-pills"></i> Manage Medicines</a>
+             <div class="menu-item"><a href="{% url 'reception-laborders' %}"><i class="fa-solid fa-truck-front"></i> Track Orders</a></div>
             <!-- <button id="logout-option" class="menu-item"><i class="fas fa-sign-out-alt"></i> Logout</button> -->
         </div>
     </nav>

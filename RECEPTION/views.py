@@ -1,12 +1,16 @@
 from rest_framework.views import APIView
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
-from rest_framework.response import Response  
-from django.http import JsonResponse  
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
-from rest_framework import status
-from SUPER_ADMIN.models import Receptionist, Doctor, Branch,PharmaceuticalMedicine, MedicineBill
+from SUPER_ADMIN.models import (
+                                Receptionist,
+                                Doctor,
+                                Branch,
+                                PharmaceuticalMedicine,
+                                MedicineBill,
+                                LabOrder)
+
 from .models import Patient, Enquiry, PatientBooking
 from RECEPTION.serializer import (ReceptionLoginSerializer, PatientSerializer,
                                 ReceptionEditSerializer, EnquirySerializer,
@@ -16,27 +20,74 @@ from RECEPTION.serializer import (ReceptionLoginSerializer, PatientSerializer,
                                 MedicineBillCreateSerializer,
                                 PharmaceuticalMedicineSerializerBill,MedicalHistorySerializer,
                                 CheckedInPatientSerializer,TreatmentBillSerializer, TreatmentBillDetailSerializer, MedicinePrescriptionSerializer
-                                  )
+                                )
+from SUPER_ADMIN.serializer import LabOrderSerializer
 from django.urls import reverse
 from DOCTOR.models import TreatmentBill, PatientBooking, DentalExamination, MedicinePrescription
 from django.contrib.auth import login
 from rest_framework.authtoken.models import Token
-from django.shortcuts import render, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics, status, filters
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views import View
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db import transaction
-from django.db.models import Count, Q, F
+from django.db.models import Q, F
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-import json
-import uuid
+
+# ---------------LAB ORDER ---------------
+class LabOrderListView(APIView):
+    """
+    List all lab orders or create a new lab order
+    """
+
+    def get(self, request):
+        lab_orders = LabOrder.objects.all()
+        serializer = LabOrderSerializer(lab_orders, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = LabOrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LabOrderDetailView(APIView):
+    """
+    Retrieve, update or delete a lab order
+    """
+
+    def get_object(self, pk):
+        return get_object_or_404(LabOrder, pk=pk)
+
+    def get(self, request, pk):
+        lab_order = self.get_object(pk)
+        serializer = LabOrderSerializer(lab_order)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        lab_order = self.get_object(pk)
+        serializer = LabOrderSerializer(lab_order, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, pk):
+        lab_order = self.get_object(pk)
+        serializer = LabOrderSerializer(lab_order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        lab_order = self.get_object(pk)
+        lab_order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # ----------------------------Reception Specialization------------------------------

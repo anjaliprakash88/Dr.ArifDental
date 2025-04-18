@@ -32,30 +32,40 @@ class UserSerializer2(serializers.ModelSerializer):
     
 # --------------------------- SUPER ADMIN SERIALIZER ------------------------- #
 class SuperAdminSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+    email = serializers.EmailField(write_only=True)
 
     class Meta:
         model = SuperAdmin
-        fields = '__all__'
+        fields = [
+            'username', 'password', 'first_name', 'last_name', 'email',
+            'phone_number', 'address', 'designation', 'profile_image'
+        ]
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        password = user_data.pop('password')
+        username = validated_data.pop('username')
+        password = validated_data.pop('password')
+        first_name = validated_data.pop('first_name')
+        last_name = validated_data.pop('last_name')
+        email = validated_data.pop('email')
 
-        user_instance = User(**user_data)
-        user_instance.set_password(password)
-        user_instance.is_superadmin = True
-        user_instance.save()
+        # Create User with superadmin flag
+        user = User.objects.create(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            is_superadmin=True
+        )
+        user.set_password(password)
+        user.save()
 
-        super_admin_instance = SuperAdmin.objects.create(user=user_instance, **validated_data)
-        return super_admin_instance
-    
-    def update(self, instance, validated_data):
-        # Only update the SuperAdmin fields (not the user fields)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+        # Create SuperAdmin linked to user
+        superadmin = SuperAdmin.objects.create(user=user, **validated_data)
+        return superadmin
 
 
 # ---------------------------- SUPER ADMIN LOGIN ----------------------------- #

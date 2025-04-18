@@ -146,6 +146,12 @@
                     <input type="text" id="model-designation" class="form-control" value="Clinic Administrator" readonly>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Profile Image (optional)</label>
+                    <input type="file" id="model-image" name="profile_image" class="form-control" accept="image/*">  <!-- 👈 Add this -->
+                </div>
+            </div>
 
             <button type="submit" class="btn btn-primary">Register</button>
             <div class="spinner" id="spinner"></div>
@@ -165,29 +171,34 @@
         $(document).ready(function () {
             $('#superuserForm').on('submit', function (e) {
                 e.preventDefault();
-                
+
                 // Show spinner
                 $('#spinner').show();
 
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                const data = {
-                    user: {
-                        username: $('#model-username').val(),
-                        password: $('#model-password').val(),
-                        first_name: $('#model-firstname').val(),
-                        last_name: $('#model-lastname').val(),
-                        email: $('#model-email').val(),
-                    },
-                    phone_number: $('#model-phonenumber').val(),
-                    address: $('#model-address').val(),
-                    designation: $('#model-designation').val(),
-                };
+
+                const formData = new FormData();
+                formData.append('username', $('#model-username').val());
+                formData.append('password', $('#model-password').val());
+                formData.append('first_name', $('#model-firstname').val());
+                formData.append('last_name', $('#model-lastname').val());
+                formData.append('email', $('#model-email').val());
+                formData.append('phone_number', $('#model-phonenumber').val());
+                formData.append('address', $('#model-address').val());
+                formData.append('designation', $('#model-designation').val());
+
+                // ✅ Get the actual file object, not just .val()
+                const imageFile = $('#model-image')[0].files[0];
+                if (imageFile) {
+                    formData.append('profile_image', imageFile);
+                }
 
                 $.ajax({
                     url: `/superadmin/signup/`,
                     type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     headers: { 'X-CSRFToken': csrftoken },
                 })
                 .done(function (response) {
@@ -199,11 +210,11 @@
                     alert(`Registration failed: ${errorMessage}`);
                 })
                 .always(function () {
-                    // Hide spinner after request is complete
                     $('#spinner').hide();
                 });
             });
         });
+
     </script>
 
 </body>

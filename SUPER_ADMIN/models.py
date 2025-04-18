@@ -31,6 +31,7 @@ class SuperAdmin(models.Model):
     phone_number = models.CharField(max_length=15, unique=True)
     address = models.TextField(blank=True, null=True)
     designation = models.CharField(max_length=100, default="Clinic Administrator")
+    profile_image = models.ImageField(upload_to='superadmin_images/', blank=True, null=True)
 
     def __str__(self):
         return self.user.username

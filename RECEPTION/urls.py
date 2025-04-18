@@ -26,8 +26,8 @@ from .views import (
                     #Pharmacy-Imports
                     PharmaceuticalMedicineListCreateAPIView,
                     PharmaceuticalMedicineRetrieveUpdateDestroyAPIView,
-                    MedicineListView, MedicineBillListView, MedicineBillDetailView,PatientPrescriptionAPIView,PatientCheckInView
-                    )
+                    MedicineListView, MedicineBillListView, MedicineBillDetailView,PatientPrescriptionAPIView,PatientCheckInView,
+                    LabOrderDetailView,LabOrderListView)
 from .import views
 
 urlpatterns = [
@@ -87,6 +87,8 @@ urlpatterns = [
     path('update-payment/<int:bill_id>/', UpdatePaymentView.as_view(), name='update-payment'),
     path('patients/<str:patient_code>/checkin/', PatientCheckInView.as_view(), name='patient-checkin'),
     path('checked-in/', CheckedInPatientsView.as_view(), name='checked-in-patients'),
+    path('lab-orders/', LabOrderListView.as_view(), name='lab-order-list'),
+    path('lab-orders/<int:pk>/', LabOrderDetailView.as_view(), name='lab-order-detail'),
    
     #RenderHTMLPages
 
@@ -98,6 +100,7 @@ urlpatterns = [
     path('billing-options/', TemplateView.as_view(template_name="reception/billing_options.html"), name='billing-options'),
     path('dashboard/', TemplateView.as_view(template_name="reception/reception_dashboard.html"), name='reception-dashboard'),
     path('singlepage/', TemplateView.as_view(template_name="reception/manage-patient-new.html"), name='singlepage'),
+    path('laborders/', TemplateView.as_view(template_name="reception/labtracking.html"), name='reception-laborders'),
 
 
 

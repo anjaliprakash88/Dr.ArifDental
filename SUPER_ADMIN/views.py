@@ -176,7 +176,6 @@ class BranchDetailView(APIView):
         branch.save()
         return Response({"message": "Item deleted successfully"}, status=status.HTTP_200_OK)
 
-
 # -------------------------- Supplier CRUD --------------------------#
 class SupplierView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
