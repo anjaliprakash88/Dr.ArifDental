@@ -37,6 +37,7 @@ from rest_framework.permissions import IsAuthenticated
 import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class DeleteInvestigationView(APIView):
@@ -439,14 +440,15 @@ class LogoutView(APIView):
 # ---------------DOCTOR PROFILE ---------------
 class DoctorProfileView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    parser_classes = [MultiPartParser, FormParser]  # Needed for file uploads
     template_name = 'doctor/doctor_profile.html'
 
     def get(self, request):
         try:
             doctor = get_object_or_404(Doctor, user=request.user)
             if request.accepted_renderer.format == 'json':
-                doctor_serializer = DoctorViewProfileSerializer(doctor)
-                return Response({'doctors': doctor_serializer.data}, status=status.HTTP_200_OK)
+                serializer = DoctorViewProfileSerializer(doctor)
+                return Response({'doctors': serializer.data}, status=status.HTTP_200_OK)
             return Response({'doctors': doctor}, template_name=self.template_name)
 
         except Doctor.DoesNotExist:
@@ -454,36 +456,22 @@ class DoctorProfileView(APIView):
 
     def post(self, request):
         doctor = get_object_or_404(Doctor, user=request.user)
-        user_data = {
-            "username": request.data.get("username"),
-            "first_name": request.data.get("first_name"),
-            "last_name": request.data.get("last_name"),
-            "email": request.data.get("email"),
-        }
-        for attr, value in user_data.items():
-            if value:
-                setattr(doctor.user, attr, value)
-            doctor.user.save()
 
-        doctor_data = {
-            "phone_number": request.data.get("phone_number"),
-            "experience_years": request.data.get("experience_years"),
-            "qualification": request.data.get("qualification"),
-            "address": request.data.get("address"),
-            "specialization": request.data.get("specialization"),
+        # Parse nested `user` data from the flat request
+        data = request.data.copy()
+        data['user'] = {
+            "username": data.get("username"),
+            "first_name": data.get("first_name"),
+            "last_name": data.get("last_name"),
+            "email": data.get("email"),
         }
 
-        for attr, value in doctor_data.items():
-            if value:
-                setattr(doctor, attr, value)
-
-        if "educational_certificate" in request.FILES:
-            doctor.educational_certificate = request.FILES["educational_certificate"]
-        if "medical_license" in request.FILES:
-            doctor.medical_license = request.FILES["medical_license"]
-        doctor.save()
-        return Response({"message": "Doctor profile updated successfully"}, status=status.HTTP_200_OK)
-
+        serializer = DoctorViewProfileSerializer(doctor, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Doctor profile updated successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # ---------------DOCTOR PATIENT LIST---------------
 class DoctorPatientListView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]

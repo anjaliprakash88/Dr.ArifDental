@@ -122,6 +122,7 @@ class BranchSerializer(serializers.ModelSerializer):
 class DoctorViewProfileSerializer(serializers.ModelSerializer):
     user = UserViewProfileSerializer()
     branch = BranchSerializer()
+    profile_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Doctor

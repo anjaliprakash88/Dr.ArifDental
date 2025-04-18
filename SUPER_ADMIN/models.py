@@ -65,7 +65,6 @@ class Doctor(models.Model):
     def __str__(self):
         return self.user.username
 
-
 #--------------------------------------PHARMACY MODEL------------------------------------#
 class Pharmacy(models.Model):
     user = models.OneToOneField(User, related_name="pharmacy", on_delete=models.CASCADE)
