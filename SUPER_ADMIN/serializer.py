@@ -215,52 +215,69 @@ class PharmacyCreateSerializer(serializers.ModelSerializer):
 #----------------------Doctor Serializer--------------------------------
 
 class DoctorCreateSerializer(serializers.ModelSerializer):
-    user = UserSerializer2()
+    first_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+    email = serializers.EmailField(write_only=True)
+    profile_image = serializers.ImageField(required=False, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Doctor
-        fields = ['id', 'experience_years', 'specialization', 'qualification', 'phone_number', 'address', 'user', 'branch','branch_name']
+        fields = [
+            'id', 'experience_years', 'specialization', 'qualification',
+            'phone_number', 'address', 'branch', 'branch_name', 'profile_image',
+            'first_name', 'last_name', 'email'
+        ]
 
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user', None)
+        # Extract user-related fields
+        first_name = validated_data.pop('first_name')
+        last_name = validated_data.pop('last_name')
+        email = validated_data.pop('email')
 
-        password = user_data.pop('password', None)
-        if not password:
-            password=self._generate_random_password()
+        password = self._generate_random_password()
+        username = f"{first_name.lower()}_{last_name.lower()}"
 
-        username=user_data.get('username', None)
-        if not username:
-            username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
-
-        user_instance = get_user_model()(**user_data)
-        user_instance.username = username
+        user_instance = get_user_model()(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            is_doctor=True
+        )
         user_instance.set_password(password)
-        user_instance.is_doctor=True
         user_instance.save()
 
-        reception_instance = Doctor.objects.create(
-            user = user_instance,
+        profile_image = validated_data.pop('profile_image', None)
+
+        doctor_instance = Doctor.objects.create(
+            user=user_instance,
+            profile_image=profile_image,
             **validated_data
         )
-        self.send_reception_id_email(user_instance.email, user_instance.username, password)
-        return  reception_instance
 
+        self.send_reception_id_email(email, username, password)
+        return doctor_instance
 
     def send_reception_id_email(self, email, username, password):
-        subject ="Doctor Account Details"
-        message = f"Dear Doctor,\n\n Your account has been created. Here the login details \n\n Username: {username}\nPassword:{password} \n\n Thank You !"
+        subject = "Doctor Account Details"
+        message = (
+            f"Dear Doctor,\n\n"
+            f"Your account has been created. Here are the login details:\n\n"
+            f"Username: {username}\nPassword: {password}\n\n"
+            f"Thank you!"
+        )
         from_email = settings.DEFAULT_FROM_EMAIL
-
         send_mail(subject, message, from_email, [email])
 
     def _generate_random_password(self):
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        return password
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+
     
 #---------------------------
 class UserUpdateSerializer(serializers.ModelSerializer):

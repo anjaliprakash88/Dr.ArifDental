@@ -314,7 +314,7 @@ h2 {
                     Register New Doctor
                 </div>
                 <div class="card-body">
-                    <form id="doctorRegistrationForm">
+                    <form id="doctorRegistrationForm" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -370,6 +370,13 @@ h2 {
                                 <option value="">Select a Branch</option>
                             </select>
                         </div>
+                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" id="modal-profile-image" class="form-control">
+                            </div>
+                        </div>
+
                         <div class="d-grid gap-3">
                             <button type="submit" class="btn btn-primary">Register Doctor</button>
                         </div>
@@ -395,73 +402,71 @@ h2 {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        // Custom DataTable initialization
-        const table = $('#doctorsTable').DataTable({
-            "ajax": {
-                "url": "/superadmin/doctor-create/",
-                "type": "GET",
-                "dataSrc": "serializer"
-            },
-            "columns": [
-                { 
-                    "data": null,
-                    "render": function(data, type, row) {
-                        return `<span class="toggle-indicator">▶</span> ${row.user.first_name} ${row.user.last_name}`;
-                    }
-                },
-                { "data": "specialization" },
-                { "data": "qualification" },
-                { 
-                    "data": "experience_years",
-                    "render": function(data) {
-                        return data + " years";
-                    }
-                },
-                { 
-                    "data": "branch_name", // Use "branch_name" instead of "branch"
-                    "render": function(data) {
-                        return data ? data : "N/A"; // Handle null values
-                    }
+$(document).ready(function () {
+    // Initialize DataTable
+    const table = $('#doctorsTable').DataTable({
+        "ajax": {
+            "url": "/superadmin/doctor-create/",
+            "type": "GET",
+            "dataSrc": "serializer"
+        },
+        "columns": [
+            {
+                "data": null,
+                "render": function (data, type, row) {
+                    return `<span class="toggle-indicator">▶</span> ${row.user.first_name} ${row.user.last_name}`;
                 }
-            ],
-            "ordering": true,
-            "searching": true,
-            "paging": true,
-            "info": true,
-            "lengthChange": true,
-            "autoWidth": false,
-            "responsive": true,
-            "language": {
-                "emptyTable": "No doctors available",
-                "zeroRecords": "No matching records found"
             },
-            "drawCallback": function() {
-                $('table.dataTable').addClass('dark-table');
+            { "data": "specialization" },
+            { "data": "qualification" },
+            {
+                "data": "experience_years",
+                "render": function (data) {
+                    return data + " years";
+                }
+            },
+            {
+                "data": "branch_name",
+                "render": function (data) {
+                    return data ? data : "N/A";
+                }
             }
-        });
+        ],
+        "ordering": true,
+        "searching": true,
+        "paging": true,
+        "info": true,
+        "lengthChange": true,
+        "autoWidth": false,
+        "responsive": true,
+        "language": {
+            "emptyTable": "No doctors available",
+            "zeroRecords": "No matching records found"
+        },
+        "drawCallback": function () {
+            $('table.dataTable').addClass('dark-table');
+        }
+    });
 
-        // Handle row click to show/hide doctor details
-        $('#doctorsTable tbody').on('click', 'tr', function() {
-            const tr = $(this);
-            const row = table.row(tr);
-            
-            if (row.child.isShown()) {
-                // This row is already open - close it
-                row.child.hide();
-                tr.find('.toggle-indicator').html('▶');
-            } else {
-                // Open this row
-                const rowData = row.data();
-                row.child(formatDoctorDetails(rowData)).show();
-                tr.find('.toggle-indicator').html('▼');
-            }
-        });
+    // Toggle details row
+    $('#doctorsTable tbody').on('click', 'tr', function () {
+        const tr = $(this);
+        const row = table.row(tr);
 
-        // Function to format the expanded row details
-        function formatDoctorDetails(d) {
-            return `
-            <div class="doctor-details">
+        if (row.child.isShown()) {
+            row.child.hide();
+            tr.find('.toggle-indicator').html('▶');
+        } else {
+            const rowData = row.data();
+            row.child(formatDoctorDetails(rowData)).show();
+            tr.find('.toggle-indicator').html('▼');
+        }
+    });
+
+    // Detail formatting function
+    function formatDoctorDetails(d) {
+        return `
+            <div class="doctor-details" style="display: flex; gap: 2rem;">
                 <div style="flex: 1;">
                     <div class="detail-row">
                         <div class="detail-label">Email:</div>
@@ -481,112 +486,114 @@ h2 {
                         <div class="detail-label">Doctor ID:</div>
                         <div class="detail-value">${d.id}</div>
                     </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Profile Image:</div>
+                        <div class="detail-value">
+                            ${d.profile_image ? `<img src="${d.profile_image}" width="100" height="100" style="object-fit: cover;">` : 'No image'}
+                        </div>
+                    </div>
                 </div>
             </div>`;
-        }
+    }
 
-        // Fetch branches for dropdown
-        function fetchBranches() {
-            $.ajax({
-                url: `/superadmin/branch/`,
-                type: 'GET',
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                success: function (response) {
-                    console.log("Branch API Response:", response);
-                    const branchSelect = $('#model-branch');
-                    branchSelect.empty().append(`<option value="">Select a branch</option>`);
-                    if (Array.isArray(response)) {
-                        response.forEach(branch => {
-                            branchSelect.append(`<option value="${branch.id}">${branch.name}</option>`);
-                        });
-                    } else {
-                        console.error("Expected an array but got:", response);
-                        alert("Error: Unexpected data format received!");
-                    }
-                },
-                error: function (xhr) {
-                    alert(`Failed to fetch branches: ${xhr.statusText}`);
-                }
-            });
-        }
-
-        // Fetch specializations for dropdown
-        function fetchSpecializations() {
-            $.ajax({
-                url: "/superadmin/specializations/",
-                type: "GET",
-                success: function (response) {
-                    console.log("Specializations API Response:", response);
-                    const specializationSelect = $("#modal-specialization");
-                    specializationSelect.empty().append(`<option value="">Select Specialization</option>`);
-                    $.each(response, function (key, value) {
-                        specializationSelect.append(`<option value="${key}">${value}</option>`);
+    // Load branch dropdown
+    function fetchBranches() {
+        $.ajax({
+            url: `/superadmin/branch/`,
+            type: 'GET',
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            success: function (response) {
+                const branchSelect = $('#model-branch');
+                branchSelect.empty().append(`<option value="">Select a branch</option>`);
+                if (Array.isArray(response)) {
+                    response.forEach(branch => {
+                        branchSelect.append(`<option value="${branch.id}">${branch.name}</option>`);
                     });
-                },
-                error: function (xhr) {
-                    console.error("Failed to fetch specializations:", xhr.responseText);
+                } else {
+                    alert("Error: Unexpected data format for branches!");
                 }
-            });
+            },
+            error: function (xhr) {
+                alert(`Failed to fetch branches: ${xhr.statusText}`);
+            }
+        });
+    }
+
+    // Load specialization dropdown
+    function fetchSpecializations() {
+        $.ajax({
+            url: "/superadmin/specializations/",
+            type: "GET",
+            success: function (response) {
+                const specializationSelect = $("#modal-specialization");
+                specializationSelect.empty().append(`<option value="">Select Specialization</option>`);
+                $.each(response, function (key, value) {
+                    specializationSelect.append(`<option value="${key}">${value}</option>`);
+                });
+            },
+            error: function (xhr) {
+                console.error("Failed to fetch specializations:", xhr.responseText);
+            }
+        });
+    }
+
+    // Trigger dropdown fetch
+    fetchBranches();
+    fetchSpecializations();
+
+    // Handle form submit
+    $('#doctorRegistrationForm').on('submit', function (event) {
+        event.preventDefault();
+        $('#loadingModal').css('display', 'flex');
+
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const formData = new FormData();
+
+        // User fields
+        formData.append('first_name', $('#modal-first-name').val());
+        formData.append('last_name', $('#modal-last-name').val());
+        formData.append('email', $('#modal-email').val());
+
+        // Doctor fields
+        formData.append('address', $('#modal-address').val());
+        formData.append('specialization', $('#modal-specialization').val());
+        formData.append('experience_years', parseInt($('#modal-experience-years').val(), 10));
+        formData.append('qualification', $('#modal-qualification').val());
+        formData.append('phone_number', $('#modal-phone-number').val());
+        formData.append('branch', parseInt($('#model-branch').val(), 10));
+
+        // Profile image field
+        const profileImage = $('#modal-profile-image')[0].files[0];
+        if (profileImage) {
+            formData.append('profile_image', profileImage);
         }
 
-        // Load dropdowns on page load
-        fetchBranches();
-        fetchSpecializations();
-
-        // Handle form submission
-        $('#doctorRegistrationForm').on('submit', function (event) {
-            event.preventDefault();
-
-            // Show loading modal
-            $('#loadingModal').css('display', 'flex');
-
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            const data = {
-                address: $('#modal-address').val(),
-                specialization: $('#modal-specialization').val(),
-                experience_years: parseInt($('#modal-experience-years').val(), 10),
-                qualification: $('#modal-qualification').val(),
-                phone_number: $('#modal-phone-number').val(),
-                branch: parseInt($('#model-branch').val(), 10),
-                user: {
-                    first_name: $('#modal-first-name').val(),
-                    last_name: $('#modal-last-name').val(),
-                    email: $('#modal-email').val(),
-                }
-            };
-
-            console.log("Data Being sent: ", data);
-
-            $.ajax({
-                url: `/superadmin/doctor-create/`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                headers: { "X-CSRFToken": csrftoken },
-            })
-            .done(function (response) {
-                // Hide loading modal
-                $('#loadingModal').css('display', 'none');
-                
-                // Show success alert
-                alert('Doctor details registered successfully');
-                
-                // Clear form
+        $.ajax({
+            url: "/superadmin/doctor-create/",
+            type: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                $('#loadingModal').hide();
+                alert("Doctor registered successfully!");
                 $('#doctorRegistrationForm')[0].reset();
-                
-                // Refresh the DataTable
-                table.ajax.reload();
-                
-                // Switch to list tab
-                $('#doctors-list-tab').tab('show');
-            })
-            .fail(function (xhr) {
-                // Hide loading modal
-                $('#loadingModal').css('display', 'none');
-                alert(`Failed to register Doctor: ${xhr.responseJSON?.error || xhr.statusText || 'Unknown error'}`);
-            });
+                table.ajax.reload(); // Refresh doctor list
+                new bootstrap.Tab(document.querySelector('#doctors-list-tab')).show();
+            },
+            error: function (xhr) {
+                $('#loadingModal').hide();
+                console.error("Registration failed:", xhr.responseText);
+                alert("Error: " + xhr.responseText);
+            }
         });
+
     });
+});
 </script>
+
 {% endblock %}

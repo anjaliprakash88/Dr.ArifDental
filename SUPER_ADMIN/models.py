@@ -60,6 +60,8 @@ class Doctor(models.Model):
     educational_certificate = models.FileField(upload_to='DOCTOR/certificates/', null=True, blank=True)
     medical_license = models.FileField(upload_to='DOCTOR/licenses/', null=True, blank=True)
 
+    profile_image = models.ImageField(upload_to='DOCTOR/profile_images/', null=True, blank=True)
+
     def __str__(self):
         return self.user.username
 
