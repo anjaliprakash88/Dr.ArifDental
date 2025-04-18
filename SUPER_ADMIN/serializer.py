@@ -215,9 +215,9 @@ class PharmacyCreateSerializer(serializers.ModelSerializer):
 #----------------------Doctor Serializer--------------------------------
 
 class DoctorCreateSerializer(serializers.ModelSerializer):
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
-    email = serializers.EmailField(write_only=True)
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
     profile_image = serializers.ImageField(required=False, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()

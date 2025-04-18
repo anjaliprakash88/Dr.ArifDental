@@ -403,18 +403,25 @@ h2 {
 
 <script>
 $(document).ready(function () {
-    // Initialize DataTable
     const table = $('#doctorsTable').DataTable({
         "ajax": {
             "url": "/superadmin/doctor-create/",
             "type": "GET",
-            "dataSrc": "serializer"
+            "dataSrc": function (response) {
+                console.log(response);  // Check the response structure
+                return response.serializer || []; // Fallback to empty array if data is missing
+            }
         },
         "columns": [
             {
                 "data": null,
                 "render": function (data, type, row) {
-                    return `<span class="toggle-indicator">▶</span> ${row.user.first_name} ${row.user.last_name}`;
+                    // Use first_name and last_name directly from the row data
+                    if (row.first_name && row.last_name) {
+                        return `<span class="toggle-indicator">▶</span> ${row.first_name} ${row.last_name}`;
+                    } else {
+                        return "<span class='toggle-indicator'>▶</span> Unknown";  // Fallback to "Unknown"
+                    }
                 }
             },
             { "data": "specialization" },
@@ -422,7 +429,7 @@ $(document).ready(function () {
             {
                 "data": "experience_years",
                 "render": function (data) {
-                    return data + " years";
+                    return data ? data + " years" : "N/A";
                 }
             },
             {
@@ -470,15 +477,15 @@ $(document).ready(function () {
                 <div style="flex: 1;">
                     <div class="detail-row">
                         <div class="detail-label">Email:</div>
-                        <div class="detail-value">${d.user.email}</div>
+                        <div class="detail-value">${d.email || 'N/A'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">Phone:</div>
-                        <div class="detail-value">${d.phone_number}</div>
+                        <div class="detail-value">${d.phone_number || 'N/A'}</div>
                     </div>
                     <div class="detail-row">
                         <div class="detail-label">Address:</div>
-                        <div class="detail-value">${d.address}</div>
+                        <div class="detail-value">${d.address || 'N/A'}</div>
                     </div>
                 </div>
                 <div style="flex: 1;">
@@ -495,6 +502,11 @@ $(document).ready(function () {
                 </div>
             </div>`;
     }
+
+
+
+
+
 
     // Load branch dropdown
     function fetchBranches() {
