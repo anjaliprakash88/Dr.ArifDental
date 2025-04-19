@@ -124,7 +124,7 @@ class PharmacyCreate(APIView):
 # --------------------------RECEPTION CREATION---------------------------------
 class ReceptionCreate(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    #template_name = 'superadmin/profilecreation/reception_profile_creation.html'
+    parser_classes = [MultiPartParser, FormParser]
     template_name = 'superadmin/receptionists_list.html'
 
     def get(self, request):

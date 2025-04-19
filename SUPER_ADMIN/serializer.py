@@ -110,49 +110,58 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
     user = UserSerializer2()
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
-    
+    profile_image = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = Receptionist
-        fields = ['id', 'experience_years', 'qualification', 'phone_number', 'address', 'user', 'branch','branch_name']
+        fields = [
+            'id', 'experience_years', 'qualification', 'phone_number', 'address',
+            'user', 'branch', 'branch_name', 'profile_image'
+        ]
 
-    def get_branch_name(self,obj):
+    def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
-    
+
     def create(self, validated_data):
         user_data = validated_data.pop('user', None)
 
         password = user_data.pop('password', None)
         if not password:
-            password=self._generate_random_password()
+            password = self._generate_random_password()
 
-        username=user_data.get('username', None)
+        username = user_data.get('username', None)
         if not username:
             username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
 
         user_instance = get_user_model()(**user_data)
         user_instance.username = username
         user_instance.set_password(password)
-        user_instance.is_reception=True
+        user_instance.is_reception = True
         user_instance.save()
 
+        # Profile image is handled here (if provided)
+        profile_image = validated_data.pop('profile_image', None)
+
         reception_instance = Receptionist.objects.create(
-            user = user_instance,
+            user=user_instance,
+            profile_image=profile_image,
             **validated_data
         )
-        self.send_reception_id_email(user_instance.email, user_instance.username, password)
-        return  reception_instance
 
+        self.send_reception_id_email(user_instance.email, user_instance.username, password)
+        return reception_instance
 
     def send_reception_id_email(self, email, username, password):
-        subject ="Your Receptionist Account Details"
-        message = f"Dear Receptionist,\n\n Your account has been created. Here the login details \n\n Username: {username}\nPassword:{password} \n\n Thank You !"
+        subject = "Your Receptionist Account Details"
+        message = (
+            f"Dear Receptionist,\n\nYour account has been created. Here are your login details:\n\n"
+            f"Username: {username}\nPassword: {password}\n\nThank You!"
+        )
         from_email = settings.DEFAULT_FROM_EMAIL
-
         send_mail(subject, message, from_email, [email])
 
     def _generate_random_password(self):
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        return password
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
     
 # ---------------------------- SUPPLIER SERIALIZER --------------------------- #
 class SupplierSerializer(serializers.ModelSerializer):
