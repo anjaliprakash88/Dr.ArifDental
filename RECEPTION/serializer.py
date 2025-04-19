@@ -136,31 +136,28 @@ class UserEditSerializer(serializers.ModelSerializer):
 
 class ReceptionEditSerializer(serializers.ModelSerializer):
     user = UserEditSerializer(required=False)
+    profile_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Receptionist
-        fields = ['user', 'id', 'phone_number', 'address', 'experience_years', 'qualification']
+        fields = ['id', 'user', 'phone_number', 'address', 'experience_years', 'qualification', 'profile_image']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)
-        print(user_data)
 
-        # ✅ Update User model (but do not update the username)
+        # ✅ Update User model (excluding 'username')
         if user_data:
             user_instance = instance.user
-
-            # Exclude 'username' from user_data
             user_data.pop('username', None)
-
             for attr, value in user_data.items():
-                setattr(user_instance, attr, value)  # ✅ Update fields
-            user_instance.save()  # ✅ Save changes
+                setattr(user_instance, attr, value)
+            user_instance.save()
 
         # ✅ Update remaining fields in Receptionist model
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        instance.save()  # ✅ Save updated instance
+        instance.save()
         return instance
 
 

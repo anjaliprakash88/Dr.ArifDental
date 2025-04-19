@@ -217,6 +217,15 @@ input:focus {
                     <label>Qualification:</label>
                     <input type="text" id="qualification" name="qualification" value="{{ reception_profile.qualification }}">
                 </div>
+
+                <div class="form-group">
+                    <label>Profile Image:</label><br>
+                    {% if reception_profile.profile_image %}
+                        <img id="preview-image" src="{{ reception_profile.profile_image.url }}" alt="Profile Image" style="max-width: 150px; border-radius: 8px; margin-bottom: 10px;">
+                    {% endif %}
+                    <input type="file" id="profile_image" name="profile_image" accept="image/*" onchange="previewProfileImage(event)">
+                </div>
+
             </div>
     
             <div class="buttons-container">
@@ -230,48 +239,52 @@ input:focus {
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // Access CSRF token from the meta tag
-    var csrfToken = $("input[name=csrfmiddlewaretoken]").val();
-    
-    $('#editreceptionprofileForm').submit(function (e) {
-        e.preventDefault();
-        var formData = {
-            first_name: $("#first_name").val(),
-            last_name: $("#last_name").val(),
-            email: $("#email").val(),
-            phone_number: $("#phone_number").val(),
-            address: $("#address").val(),
-            experience_years: $("#experience_years").val(),
-            qualification: $("#qualification").val(),
-        };
+function previewProfileImage(event) {
+    const reader = new FileReader();
+    reader.onload = function () {
+        document.getElementById('preview-image').src = reader.result;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
 
-        $.ajax({
-            url: `/reception/profile/edit/{{ reception_profile.id }}/`,
-            method: "POST",
-            contentType: "application/json",
-            headers: { 'X-CSRFToken': csrfToken },
-            data: JSON.stringify({
-                "user": {
-                    "first_name": formData.first_name,
-                    "last_name": formData.last_name,
-                    "email": formData.email
-                },
-                "phone_number": formData.phone_number,
-                "address": formData.address,
-                "experience_years": formData.experience_years,
-                "qualification": formData.qualification
-            }),
-            success: function (response) {
-                alert("Reception profile updated successfully!");
-                window.location.reload()
-            },
-            error: function (xhr, status, error) {
-                alert("Error updating Reception Profile: " + xhr.responseText);
-            }
-        });
+$('#editreceptionprofileForm').on('submit', function (event) {
+    event.preventDefault();
 
+    const formData = new FormData();
+    formData.append('phone_number', $('#phone_number').val());
+    formData.append('address', $('#address').val());
+    formData.append('experience_years', $('#experience_years').val());
+    formData.append('qualification', $('#qualification').val());
+
+    formData.append('user.first_name', $('#first_name').val());
+    formData.append('user.last_name', $('#last_name').val());
+    formData.append('user.email', $('#email').val());
+
+    const imageFile = $('#profile_image')[0].files[0];
+    if (imageFile) {
+        formData.append('profile_image', imageFile);
+    }
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    $.ajax({
+        url: `/reception/profile/edit/{{ reception_profile.id }}/`,
+        method: 'POST',
+        headers: { "X-CSRFToken": csrftoken },
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            alert("Profile updated successfully!");
+            location.reload();
+        },
+        error: function (xhr) {
+            alert("Error updating profile: " + (xhr.responseJSON?.detail || xhr.statusText));
+        }
     });
+});
 </script>
 
 {% endblock %}
 {% endblock %}
+
