@@ -16,13 +16,14 @@ urlpatterns = [
     path('pediatric/<int:booking_id>/', views.PediatricExaminationCheckup.as_view(), name='checkup_page'),
 
     path('today_preview/<int:booking_id>/', views.TodayPreview.as_view(), name='today_preview'),
-    path('delete-investigation/<int:id>/', views.DeleteInvestigationView.as_view(), name='delete-investigation'),
-
-
-    path('medicine-prescription/<int:booking_id>/', views.MedicineAPIView.as_view(), name='medicine-prescription'),
+    path('pediatric_today/<int:booking_id>/', views.PediatricTodayPreview.as_view(), name='today_preview'),
 
     path('previous-treatment/<int:booking_id>/', views.LastAppointmentPreview.as_view(), name='previous-treatment'),
+    path('pediatric_previous/<int:booking_id>/', views.PediatricLastAppointmentPreview.as_view(), name='previous-treatment'),
 
+    path('delete-investigation/<int:id>/', views.DeleteInvestigationView.as_view(), name='delete-investigation'),
+
+    path('medicine-prescription/<int:booking_id>/', views.MedicineAPIView.as_view(), name='medicine-prescription'),
 
 
     path("patient/<int:pk>/", views.RecentTreatmentDetailView.as_view(), name="recent-treatment"),

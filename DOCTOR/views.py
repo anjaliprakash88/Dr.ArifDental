@@ -159,6 +159,109 @@ class LastAppointmentPreview(APIView):
             "tooth_history_json": json.dumps(tooth_history),
         })
 
+class PediatricLastAppointmentPreview(APIView):
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = 'doctor/pediatric_last_appointment.html'
+
+    def get(self, request, booking_id, format=None):
+        last_booking = get_object_or_404(PatientBooking, id=booking_id)
+        patient = last_booking.patient
+
+        current_booking = PatientBooking.objects.filter(
+            patient=patient,
+            appointment_date__gte=date.today()
+        ).order_by('appointment_date').first()
+
+        if not current_booking:
+            return render(request, self.template_name, {
+                "data": {},
+                "message": "No current appointment found."
+            })
+
+        serializer = LastAppointmentPreviewSerializer(last_booking)
+        serialized_data = serializer.data
+
+        # Get all notes from the serialized data
+        all_notes = []
+        if serialized_data.get('dentition') and serialized_data['dentition'].get('all_notes'):
+            all_notes = serialized_data['dentition']['all_notes']
+
+        dentitions = Dentition.objects.filter(booking=last_booking)
+        print("Dentitions from current booking:", dentitions)
+        past_dentitions = Dentition.objects.filter(booking__patient=patient).order_by('booking__appointment_date')
+
+        # Build note map
+        from collections import defaultdict
+        tooth_notes_map = defaultdict(list)
+        for d in past_dentitions:
+            print(
+                f"Dentition for tooths {d.selected_teeth}: treatment={d.treatment}, note={d.note}")
+            for tooth_id in d.selected_teeth:  # Loop through each selected tooth
+                if d.note and d.note.strip().lower() != "healthy":
+                    note_str = f"{d.booking.appointment_date}: {d.treatment} - {d.note}"
+                    tooth_notes_map[tooth_id].append(note_str)
+
+        print("Tooth notes map (past appointments):", json.dumps(tooth_notes_map, indent=2))
+
+        # Append history and all_notes for each tooth
+        # Safely handle possible missing 'dentition' key
+        dentition_serialized = serialized_data.get('dentition') or {}
+        all_notes = dentition_serialized.get('all_notes', [])
+        tooth_history = dentition_serialized.get('tooth_history', {})
+
+        dentition_data = []
+
+        for tooth_id, treatments in tooth_history.items():
+            for treatment_entry in treatments:
+                dentition_data.append({
+                    "tooth_id": tooth_id,
+                    "treatment": treatment_entry['treatment'],
+                    "color_code": treatment_entry['color_code'],
+                    "note": treatment_entry['note'],
+                    "date": treatment_entry['date'],
+                    "all_notes": tooth_notes_map[tooth_id]
+                })
+
+        dentition_data_json = json.dumps(dentition_data)
+
+        prescriptions = MedicinePrescription.objects.filter(booking=last_booking)
+
+        prescription_data = [
+            {
+                "medicine": {
+                    "id": p.medicine.id,
+                    "name": p.medicine.medicine_name
+                },
+                "medicine_name": p.medicine.medicine_name,
+                "dosage_days": p.dosage_days,
+                "medicine_times": p.medicine_times,
+                "meal_times": p.meal_times,
+            }
+            for p in prescriptions
+        ]
+
+        prescription_data_json = json.dumps(prescription_data)
+
+        treatments = DentitionTreatment.objects.all()
+
+        if format == 'json' or request.headers.get('Accept') == 'application/json':
+            return Response(serializer.data)
+
+        return render(request, self.template_name, {
+            "data": serializer.data,
+            "booking_id": current_booking.id,
+            "last_booking_id": last_booking.id,
+            "patient_name": patient.full_name,
+            "appointment_date": last_booking.appointment_date,
+            "appointment_time": last_booking.appointment_time,
+            "patient_email": patient.email,
+            "patient_age": patient.age,
+            "dentition_data_json": dentition_data_json,
+            "treatments": DentitionTreatmentSerializer(treatments, many=True).data,
+            "prescription_data_json": prescription_data_json,
+            "tooth_history_json": json.dumps(tooth_history),
+        })
+
 # -------------TODAY PREVIEW------------
 class TodayPreview(APIView):
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
@@ -170,6 +273,64 @@ class TodayPreview(APIView):
         serializer = TodayPreviewSerializer(booking)
 
         # 🔽 Add this: Query your dentition data
+        dentitions = Dentition.objects.filter(booking_id=booking.id)
+        dentition_data = []
+
+        for d in dentitions:
+            for tooth_id in d.selected_teeth:
+                dentition_data.append({
+                    "tooth_id": tooth_id,
+                    "treatment": d.treatment.name if d.treatment else "Healthy",
+                    "color_code": d.treatment.color_code if d.treatment else "#229954",  # default green
+                    "note": d.note or "",
+                })
+
+        dentition_data_json = json.dumps(dentition_data)
+        treatments = DentitionTreatment.objects.all()
+
+        prescriptions = MedicinePrescription.objects.filter(booking_id=booking.id)
+        prescription_data = []
+
+        for p in prescriptions:
+            prescription_data.append({
+                "medicine": {
+                    "id": p.medicine.id,
+                    "name": p.medicine.medicine_name
+                },
+                "medicine_name": p.medicine.medicine_name,
+                "dosage_days": p.dosage_days,
+                "medicine_times": p.medicine_times,
+                "meal_times": p.meal_times,
+            })
+
+        prescription_data_json = json.dumps(prescription_data)
+
+        if format == 'json' or request.headers.get('Accept') == 'application/json':
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return render(request, self.template_name, {
+            "data": serializer.data,
+            "booking": booking,
+            "patient_name": patient.full_name,
+            "appointment_date": booking.appointment_date,
+            "appointment_time": booking.appointment_time,
+            "patient_email": patient.email,
+            "patient_age": patient.age,
+            "dentition_data_json": dentition_data_json,
+            "treatments": DentitionTreatmentSerializer(treatments, many=True).data,
+            "prescription_data_json": prescription_data_json
+        })
+
+class PediatricTodayPreview(APIView):
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = "doctor/pediatric_today_preview.html"
+
+    def get(self, request, booking_id, format=None):
+        booking = get_object_or_404(PatientBooking, id=booking_id)
+        patient = booking.patient
+        serializer = TodayPreviewSerializer(booking)
+
+
         dentitions = Dentition.objects.filter(booking_id=booking.id)
         dentition_data = []
 
@@ -410,7 +571,6 @@ class DentalExaminationCheckup(APIView):
             "created_prescriptions": created_prescriptions
         }, status=status.HTTP_200_OK)
 
-# ---------------DENTAL EXAMINATION--------------
 class PediatricExaminationCheckup(APIView):
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
     template_name = "doctor/pediatric_page.html"
@@ -697,7 +857,6 @@ class DoctorPatientListView(APIView):
         return Response({
             "doctor": DoctorPatientSerializer(doctor).data
         })
-
 
 class RecentTreatmentDetailView(APIView):
     def get(self, request, pk):

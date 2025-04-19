@@ -924,7 +924,7 @@ $(document).on("click", ".view-patients", function (e) {
     let bookingId = $(this).data("id");
 
     if (bookingId) {
-        window.location.href = `/doctor/today_preview/${bookingId}/`;
+        window.location.href = `/doctor/pediatric_today/${bookingId}/`;
     } else {
         alert("Booking ID is missing!");
     }
@@ -936,7 +936,7 @@ $(document).on("click", ".last", function () {
     let bookingId = $(this).data("id");
 
     if (bookingId) {
-        window.location.href = `/doctor/previous-treatment/${bookingId}/`;
+        window.location.href = `/doctor/pediatric_previous/${bookingId}/`;
     } else {
         alert("No previous treatment history found for this patient.");
     }
