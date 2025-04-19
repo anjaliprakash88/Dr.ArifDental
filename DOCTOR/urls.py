@@ -1,5 +1,6 @@
 from django.urls import path
 from .import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('login/', views.DoctorLoginView.as_view(), name='doctor-login'),
@@ -28,6 +29,7 @@ urlpatterns = [
 
     path("patient/<int:pk>/", views.RecentTreatmentDetailView.as_view(), name="recent-treatment"),
 
+    path('singlepage/', TemplateView.as_view(template_name="reception/manage-patient-new.html"), name='singlepage'),
 
 ]
 

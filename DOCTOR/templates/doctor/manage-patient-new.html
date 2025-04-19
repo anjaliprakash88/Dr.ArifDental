@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Add DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <title>Medical Reception System</title>
+    <style>
+        /* Minimal CSS for a clean, functional interface */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .search-container input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        .search-container button {
+            padding: 8px 15px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .action-button {
+            padding: 6px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .edit-icon {
+            cursor: pointer;
+            color: #2196F3;
+            margin-left: 5px;
+        }
+        .history-btn {
+            background-color: #410c0ccc;
+            color: white;
+        }
+        .billing-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .appointment-btn {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .pagination button.active {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            position: relative;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+        .close:hover {
+            color: black;
+        }
+        .modal-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .modal-footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+        .prescription-btn {
+            background-color: #6f42c1; /* Purple color */
+            color: white;
+        }
+        .prescription-btn:hover {
+            background-color: #5a32a3;
+        }
+        #back-button {
+            padding: 10px 15px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 20px;
+        }
+
+        #back-button:hover {
+            background-color: #0056b3;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-print {
+            background-color: #2196F3;
+            color: white;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .status-upcoming {
+            color: #2c3e50;
+        }
+        .status-pending {
+            color: #FF9800;
+        }
+        .payment-due {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .appointment-time {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .dataTables_wrapper {
+            margin-top: 20px;
+        }
+        .dataTables_filter {
+            float: right;
+            margin-bottom: 10px;
+        }
+        .dataTables_length {
+            float: left;
+            margin-bottom: 10px;
+        }
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            body { padding: 5px; font-size: 14px; }
+            header { flex-direction: column; align-items: flex-start; }
+            header h1 { font-size: 1.2rem; }
+            .search-container { flex-direction: column; }
+            .search-container button { width: 100%; border-radius: 4px; }
+            .action-button { width: 100%; margin: 5px 0; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            th, td { padding: 8px; font-size: 0.85rem; }
+            .modal-content { width: 95%; margin: 10% auto; padding: 10px; }
+            .btn, .action-button { font-size: 0.85rem; padding: 8px; }
+            #back-button { width: 100%; margin-bottom: 10px; }
+        }
+
+        @media (max-width: 480px) {
+            body { font-size: 12px; }
+            header h1 { font-size: 1rem; }
+            th, td { padding: 6px; font-size: 0.75rem; }
+            .modal-content { width: 98%; margin: 15% auto; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 0.9rem; }
+            .btn, .action-button { font-size: 0.75rem; padding: 6px; }
+            .pagination button { padding: 6px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button id="back-btn" class="btn btn-primary w-100" style="background: #1c3342;">
+                Back <i class="fa-solid fa-house" style="color: #ffffff;"></i>
+            </button>
+
+            <h1>Medical Reception System</h1>
+            <div>
+                <span id="current-date"></span>
+            </div>
+        </header>
+
+
+        <div class="search-container">
+            <!-- <input type="text" id="patient-code-search" placeholder="Search by Patient Code...">
+            <button class="btn btn-primary" onclick="searchPatient()">Search</button> -->
+            <button class="btn btn-success" onclick="openAddPatientModal()">Add New Patient</button>
+        </div>
+
+        <table id="patients-table" class="display">
+            <thead>
+                <tr>
+                    <th>Patient Code</th>
+                    <th>Patient Name</th>
+                    <th>Contact</th>
+                    <th>Last Visit</th>
+                    <th>Today's Appointment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="patients-table-body"></tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <!-- Pagination will be generated dynamically -->
+        </div>
+
+        <!-- Add Patient Modal -->
+        <div id="add-patient-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('add-patient-modal')">&times;</span>
+                <h2>Add New Patient</h2>
+                <div class="form-group">
+                    <label for="add-patient-name">Full Name:</label>
+                    <input type="text" id="add-patient-name">
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-age">Age:</label>
+                    <input type="text" id="add-patient-age">
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-gender">Gender:</label>
+                    <select id="add-patient-gender">
+                        <option value="">Select Gender</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <select id="model-branch" class="form-select" required>
+                        <option value="">Select Branch</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-patient-contact">Contact Number:</label>
+                    <input type="tel" id="add-patient-contact">
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-email">Email:</label>
+                    <input type="email" id="add-patient-email">
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-address">Address:</label>
+                    <textarea id="add-patient-address" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-occupation">Occupation:</label>
+                    <input type="text" id="add-patient-occupation">
+                </div>
+                <div class="form-group">
+                    <label for="add-patient-notes">Medical Notes:</label>
+                    <textarea id="add-patient-notes" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="addNewPatient()">Add Patient</button>
+                    <button class="btn btn-secondary" onclick="closeModal('add-patient-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Patient Modal -->
+        <div id="update-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('update-modal')">&times;</span>
+                <h2>Update Patient Details</h2>
+                <p>Patient Code: <span id="update-patient-code"></span></p>
+                <div class="form-group">
+                    <label for="patient-name">Full Name:</label>
+                    <input type="text" id="patient-name">
+                </div>
+                <div class="form-group">
+                    <label for="patient-age">Age:</label>
+                    <input type="text" id="patient-age">
+                </div>
+                <div class="form-group">
+                    <label for="patient-gender">Gender:</label>
+                    <select id="patient-gender">
+                        <option value="">Select Gender</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="patient-contact">Contact Number:</label>
+                    <input type="tel" id="patient-contact">
+                </div>
+                <div class="form-group">
+                    <label for="patient-email">Email:</label>
+                    <input type="email" id="patient-email">
+                </div>
+                <div class="form-group">
+                    <label for="patient-address">Address:</label>
+                    <textarea id="patient-address" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="patient-occupation">Occupation:</label>
+                    <input type="text" id="patient-occupation">
+                </div>
+                <div class="form-group">
+                    <label for="patient-notes">Medical Notes:</label>
+                    <textarea id="patient-notes" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="savePatientDetails()">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="closeModal('update-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient History Modal -->
+        <div id="history-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('history-modal')">×</span>
+                <div class="modal-header">
+                    <h2>Patient History</h2>
+                    <p>Patient: <span id="history-patient-name"></span></p>
+                </div>
+                <h3>Past Appointments</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Doctor</th>
+                            <th>Reason</th>
+                            <th>Treatment</th>
+                            <th>Status</th>
+                            <!-- <th>Reason</th> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded dynamically -->
+                    </tbody>
+                </table>
+                <!-- <h3>Medical History</h3>
+                <div class="form-group">
+                    <label for="medical-conditions">Existing Conditions:</label>
+                    <ul id="medical-conditions"></ul>
+                </div>
+                <div class="form-group">
+                    <label for="current-medications">Current Medications:</label>
+                    <ul id="current-medications"></ul>
+                </div> -->
+                <div class="modal-footer">
+                    <!-- <button class="btn btn-print" onclick="printHistory()">Print History</button> -->
+                    <button class="btn btn-secondary" onclick="closeModal('history-modal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prescription Modal -->
+        <div id="prescription-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('prescription-modal')">×</span>
+                <div class="modal-header">
+                    <h2>Prescription Details</h2>
+                    <p>Patient: <span id="prescription-patient-name"></span></p>
+                </div>
+                <table id="prescription-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Doctor</th>
+                            <th>Medicine</th>
+                            <th>Dosage Days</th>
+                            <th>Medicine Times</th>
+                            <th>Meal Times</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prescription-table-body"></tbody>
+                </table>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('prescription-modal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Modal -->
+        <div id="billing-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('billing-modal')">×</span>
+                <h2>Patient Billing</h2>
+                <p>Patient: <span id="billing-patient-name"></span></p>
+                <div id="pending-payment">
+                    <h3>Pending Payments</h3>
+                    <table id="pending-bills-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Service</th>
+                                <th>Total Cost</th>
+                                <th>Amount Paid</th>
+                                <th>Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-bills-tbody"></tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="4">Total Balance Due</th>
+                                <th id="total-pending-amount">₹0.00</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <h3>Payment Details</h3>
+                <div id="payment-fields" class="form-group">
+                    <div class="form-group">
+                        <label for="payment-method">Payment Method:</label>
+                        <select id="payment-method">
+                            <option value="cash">Cash</option>
+                            <option value="credit">Credit Card</option>
+                            <option value="debit">Debit Card</option>
+                            <option value="insurance">Insurance</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="payment-amount-group">
+                        <label for="payment-amount">Amount to Pay Now:</label>
+                        <input type="number" id="payment-amount" step="0.01" placeholder="Enter amount to pay">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="process-payment-btn" class="btn btn-primary hidden" onclick="processPayment()">Process Payment</button>
+                    <button class="btn btn-secondary" onclick="closeModal('billing-modal')">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Appointment Modal -->
+        <div id="appointment-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('appointment-modal')">×</span>
+                <div class="modal-header">
+                    <h2>Schedule New Appointment</h2>
+                    <p>Patient: <span id="appointment-patient-name"></span></p>
+                </div>
+                <div class="form-group">
+                    <label for="appointment-date">Date:</label>
+                    <input type="date" id="appointment-date">
+                </div>
+                <div class="form-group">
+                    <label for="appointment-time">Time:</label>
+                    <select id="appointment-time">
+                        <!-- Times will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="appointment-doctor">Doctor:</label>
+                    <select id="appointment-doctor">
+                        <!-- Doctors will be loaded dynamically -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment-branch">Branch:</label>
+                    <select id="appointment-branch">
+                        <!-- Branches will be loaded dynamically -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment-reason">Reason for Visit:</label>
+                    <textarea id="appointment-reason" rows="3"></textarea>
+                </div>
+                <!-- <div id="available-slots" style="margin: 15px 0; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
+                    <h3 style="margin-top: 0;">Available Slots</h3>
+
+                </div> -->
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="createAppointment()">Schedule Appointment</button>
+                    <button class="btn btn-secondary" onclick="closeModal('appointment-modal')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancel Appointment Confirmation Modal -->
+        <div id="cancel-appointment-modal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close" onclick="closeModal('cancel-appointment-modal')">×</span>
+                <div class="modal-header">
+                    <h2>Cancel Appointment</h2>
+                </div>
+                <p>Are you sure you want to cancel the appointment for <span id="cancel-patient-name"></span> scheduled for today at <span id="cancel-appointment-time"></span>?</p>
+                <div class="form-group">
+                    <label for="cancel-reason">Reason for Cancellation:</label>
+                    <select id="cancel-reason">
+                        <option value="patient-request">Patient Request</option>
+                        <option value="doctor-unavailable">Doctor Unavailable</option>
+                        <option value="reschedule">To Be Rescheduled</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cancel-notes">Additional Notes:</label>
+                    <textarea id="cancel-notes" rows="2"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="confirmCancelAppointment()">Confirm Cancellation</button>
+                    <button class="btn btn-primary" onclick="closeModal('cancel-appointment-modal')">Keep Appointment</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close" onclick="closeModal('success-modal')">×</span>
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Success!</h2>
+                    <p id="success-message"></p>
+                    <button class="btn btn-primary" onclick="closeModal('success-modal'); reloadPage();">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+
+        let patientsTable;
+
+        function getCsrfToken() {
+            return $('meta[name="csrf-token"]').attr('content');
+        }
+
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCsrfToken());
+                }
+            }
+        });
+
+        $(document).ready(function() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const today = new Date();
+            $('#current-date').text(today.toLocaleDateString('en-US', options));
+
+            // Initialize DataTable
+            patientsTable = $('#patients-table').DataTable({
+                "paging": true,
+                "pageLength": 5,
+                "lengthMenu": [5, 10, 25, 50],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false
+            });
+
+            fetchPatients();
+            fetchDoctors();
+            fetchTimeSlots();
+            fetchBranches();
+        });
+
+        function openAddPatientModal() {
+            $('#add-patient-modal').show();
+        }
+
+        function addNewPatient() {
+            const data = {
+                full_name: $('#add-patient-name').val(),
+                age: $('#add-patient-age').val(),
+                gender: $('#add-patient-gender').val(),
+                phone: $('#add-patient-contact').val(),
+                email: $('#add-patient-email').val(),
+                address: $('#add-patient-address').val() || "NA",
+                occupation: $('#add-patient-occupation').val() || "NA",
+                medical_notes: $('#add-patient-notes').val() || "NA",
+                branch: $('#model-branch').val()
+            };
+
+            $.ajax({
+                url: `/reception/patients/`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    showSuccessMessage("Patient added successfully!");
+                    closeModal('add-patient-modal');
+                    fetchPatients();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error adding patient:', error);
+                    alert("Failed to add patient.");
+                }
+            });
+        }
+
+        function fetchPatients() {
+            $.ajax({
+                url: `/reception/patients/`,
+                method: 'GET',
+                success: function(data) {
+                    patientsTable.clear();
+                    data.results.forEach(patient => {
+                        let actionButtons = `
+                            <button class="action-button history-btn" onclick="openHistoryModal('${patient.patient_code}')">History</button>
+                            <button class="action-button billing-btn" onclick="openBillingModal('${patient.patient_code}')">Billing</button>
+                            <button class="action-button prescription-btn" onclick="openPrescriptionModal('${patient.patient_code}')">Prescriptions</button>
+                        `;
+
+                        // Check if the patient has an appointment today
+                        if (patient.todays_appointment) {
+
+                            // Patient has an appointment today
+
+                            // Show appropriate button based on appointment status
+                            if (patient.appointment_status === 'pending') {
+                                // Pending appointment - show both Cancel and Check In buttons
+                                actionButtons += `
+                                    <button class="action-button cancel-btn" onclick="cancelAppointment('${patient.patient_code}')">Cancel Appt</button>
+                                    <button class="action-button checkin-btn" onclick="checkInPatient('${patient.patient_code}')">Check In</button>
+                                `;
+                            } else if (patient.appointment_status === 'upcoming') {
+                                // Already checked in - show Cancel button AND checked-in indicator
+                                actionButtons += `
+                                    <button class="action-button cancel-btn" onclick="cancelAppointment('${patient.patient_code}')">Cancel Appt</button>
+                                    <span class="checked-in-tag">✓ Checked In</span>
+                                `;
+                            } else if (patient.appointment_status === 'completed') {
+                                // Completed appointment - no cancel button needed
+                                actionButtons += `<span class="completed-tag">✓ Completed</span>`;
+                            } else if (patient.appointment_status === 'cancelled') {
+                                // Cancelled appointment - show cancelled indicator
+                                actionButtons += `<button class="action-button appointment-btn" onclick="openAppointmentModal('${patient.patient_code}')">New Appt</button>`;
+                             } else {
+                                // For any other status - show Cancel button
+                                actionButtons += `<button class="action-button cancel-btn" onclick="cancelAppointment('${patient.patient_code}')">Cancel Appt</button>`;
+                             }
+                        } else {
+                            // No appointment today - show New Appointment button
+                            actionButtons += `<button class="action-button appointment-btn" onclick="openAppointmentModal('${patient.patient_code}')">New Appt</button>`;
+                        }
+
+                        patientsTable.row.add([
+                            `${patient.patient_code} <i class="fas fa-pen edit-icon" onclick="openUpdateModal('${patient.patient_code}')"></i>`,
+                            patient.full_name,
+                            patient.phone,
+                            patient.last_visit || 'N/A',
+                            patient.todays_appointment || 'No Appointment',
+                            actionButtons
+                        ]);
+                    });
+                    patientsTable.draw();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching patients:', error);
+                }
+            });
+        }
+
+        function checkInPatient(patientCode) {
+            if (confirm("Confirm patient check-in?")) {
+                $.ajax({
+                    url: `/reception/patients/${patientCode}/checkin/`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        alert('Patient checked in successfully');
+                        fetchPatients(); // Refresh the patient list
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error checking in patient:', error);
+                        alert('Failed to check in patient');
+                    }
+                });
+            }
+        }
+        // function searchPatient() {
+        //     const searchValue = $('#patient-code-search').val().trim().toUpperCase();
+        //     if (!searchValue) {
+        //         alert("Please enter a Patient Code to search");
+        //         return;
+        //     }
+        //     $.ajax({
+        //         url: `/reception/patients/${searchValue}/`,
+        //         method: 'GET',
+        //         success: function(patient) {
+        //             patientsTable.clear();
+        //             patientsTable.row.add([
+        //                 `${patient.patient_code} <i class="fas fa-pen edit-icon" onclick="openUpdateModal('${patient.patient_code}')"></i>`,
+        //                 patient.full_name,
+        //                 patient.phone,
+        //                 patient.last_visit || 'N/A',
+        //                 `<span class="appointment-time">${patient.todays_appointment || 'None'}</span>`,
+        //                 `
+        //                     <button class="action-button history-btn" onclick="openHistoryModal('${patient.patient_code}')">History</button>
+        //                     <button class="action-button billing-btn" onclick="openBillingModal('${patient.patient_code}')">Billing</button>
+        //                     <button class="action-button prescription-btn" onclick="openPrescriptionModal('${patient.patient_code}')">Prescriptions</button>
+        //                     ${patient.todays_appointment ?
+        //                         `<button class="action-button cancel-btn" onclick="cancelAppointment('${patient.patient_code}')">Cancel Appt</button>` :
+        //                         `<button class="action-button appointment-btn" onclick="openAppointmentModal('${patient.patient_code}')">New Appt</button>`}
+        //                 `
+        //             ]).draw();
+        //         },
+        //         error: function(xhr, status, error) {
+        //             alert("Patient not found.");
+        //             console.error('Error searching patient:', error);
+        //         }
+        //     });
+        // }
+
+        function fetchDoctors() {
+            $.ajax({
+                url: `/reception/dropdown/doctors/`,
+                method: 'GET',
+                success: function(doctors) {
+                    const doctorSelect = $('#appointment-doctor');
+                    doctorSelect.empty();
+                    doctors.forEach(doctor => {
+                        doctorSelect.append(`<option value="${doctor.id}">${doctor.full_name}</option>`);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching doctors:', error);
+                }
+            });
+        }
+
+        function fetchTimeSlots() {
+            $.ajax({
+                url: `/reception/time-slots/`,
+                method: 'GET',
+                success: function(times) {
+                    const timeSelect = $('#appointment-time');
+                    timeSelect.empty();
+                    times.forEach(time => {
+                        timeSelect.append(`<option value="${time}">${time}</option>`);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching time slots:', error);
+                }
+            });
+        }
+
+        function updatePagination(totalItems, currentPage) {
+            const itemsPerPage = 5;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const pagination = $('.pagination');
+            pagination.empty();
+            for (let i = 1; i <= totalPages; i++) {
+                pagination.append(`
+                    <button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>
+                `);
+            }
+            pagination.append(`<button onclick="changePage('next')">Next</button>`);
+        }
+
+        function changePage(page) {
+            if (page === 'next') {
+                currentPage++;
+            } else {
+                currentPage = page;
+            }
+            fetchPatients();
+        }
+
+        // function searchPatient() {
+        //     const searchValue = $('#patient-code-search').val().trim().toUpperCase();
+        //     if (!searchValue) {
+        //         alert("Please enter a Patient Code to search");
+        //         return;
+        //     }
+        //     $.ajax({
+        //         url: `/reception/patients/${searchValue}/`,
+        //         method: 'GET',
+        //         success: function(patient) {
+        //             const tbody = $('#patients-table-body');
+        //             tbody.html(`
+        //                 <tr data-patient-code="${patient.patient_code}" style="background-color: #e8f5e9">
+        //                     <td>${patient.patient_code}</td>
+        //                     <td>${patient.full_name}</td>
+        //                     <td>${patient.phone}</td>
+        //                     <td>${patient.last_visit || 'N/A'}</td>
+        //                     <td><span class="appointment-time">${patient.todays_appointment || 'None'}</span></td>
+        //                     <td>
+        //                         <button class="action-button update-btn" onclick="openUpdateModal('${patient.patient_code}')">Update</button>
+        //                         <button class="action-button history-btn" onclick="openHistoryModal('${patient.patient_code}')">History</button>
+        //                         <button class="action-button billing-btn" onclick="openBillingModal('${patient.patient_code}')">Billing</button>
+        //                         ${patient.todays_appointment ?
+        //                             `<button class="action-button cancel-btn" onclick="cancelAppointment('${patient.patient_code}')">Cancel Appt</button>` :
+        //                             `<button class="action-button appointment-btn" onclick="openAppointmentModal('${patient.patient_code}')">New Appt</button>`}
+        //                     </td>
+        //                 </tr>
+        //             `);
+        //         },
+        //         error: function(xhr, status, error) {
+        //             alert("Patient not found.");
+        //             console.error('Error searching patient:', error);
+        //         }
+        //     });
+        // }
+
+        function openUpdateModal(patientId) {
+            $.ajax({
+                url: `/reception/patients/${patientId}/`,
+                method: 'GET',
+                success: function(patient) {
+                    $('#update-patient-code').text(patientId);
+                    $('#patient-name').val(patient.full_name || '');
+                    $('#patient-age').val(patient.age || '');
+                    $('#patient-gender').val(patient.gender || 'male');
+                    $('#patient-contact').val(patient.phone || '');
+                    $('#patient-email').val(patient.email || '');
+                    $('#patient-address').val(patient.address || '');
+                    $('#patient-occupation').val(patient.occupation || '');
+                    $('#patient-notes').val(patient.medical_notes || '');
+                    $('#update-modal').data('patientId', patientId).show();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error opening update modal:', error);
+                }
+            });
+        }
+
+        function savePatientDetails() {
+            const patientId = $('#update-modal').data('patientId');
+            const data = {
+                full_name: $('#patient-name').val(),
+                date_of_birth: $('#patient-dob').val(),
+                gender: $('#patient-gender').val(),
+                phone: $('#patient-contact').val(),
+                email: $('#patient-email').val(),
+                address: $('#patient-address').val(),
+                occupation: $('#patient-occupation').val(),
+                medical_notes: $('#patient-notes').val()
+            };
+
+            $.ajax({
+                url: `/reception/patients/${patientId}/`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    showSuccessMessage("Patient details updated successfully!");
+                    closeModal('update-modal');
+                    fetchPatients(); // Updated from fetchPatients(currentPage)
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error saving patient details:', error);
+                    alert("Failed to update patient details.");
+                }
+            });
+        }
+
+        function openHistoryModal(patientId) {
+            $.when(
+                $.ajax(`/reception/patients/${patientId}/`),
+                $.ajax(`/reception/history/${patientId}/`)
+            ).done(function(patientResponse, historyResponse) {
+                const patient = patientResponse[0];
+                const history = historyResponse[0];
+
+                $('#history-patient-name').text(`${patient.full_name} (${patientId})`);
+                const tbody = $('#history-modal table tbody');
+                const appointments = Array.isArray(history) ? history : history.past_appointments;
+
+                tbody.html(appointments && appointments.length > 0
+                    ? appointments.map(item => `
+                        <tr>
+                            <td>${item.appointment_date || 'N/A'}</td>
+                            <td>${item.doctor_name || 'N/A'}</td>
+                            <td>${item.reason || 'N/A'}</td>
+                            <td>${item.treatment || 'N/A'}</td>
+                            <td>${item.status || 'N/A'}</td>
+
+                        </tr>
+                    `).join('')
+                    : `<tr><td colspan="6" class="text-center">This patient has no past appointments</td></tr>`);
+
+                const conditions = Array.isArray(history) ? [] : history.conditions;
+                $('#medical-conditions').html(conditions && Array.isArray(conditions)
+                    ? conditions.map(c => `<li>${c}</li>`).join('')
+                    : '<li>No conditions recorded</li>');
+
+                const medications = Array.isArray(history) ? [] : history.medications;
+                $('#current-medications').html(medications && Array.isArray(medications)
+                    ? medications.map(m => `<li>${m}</li>`).join('')
+                    : '<li>No medications recorded</li>');
+
+                $('#history-modal').show();
+            }).fail(function(xhr, status, error) {
+                console.error('Error opening history modal:', error);
+                $('#history-modal table tbody').html(`<tr><td colspan="6" class="text-center">Error loading patient history</td></tr>`);
+            });
+        }
+
+        function openBillingModal(patientId) {
+            $.when(
+                $.ajax(`/reception/patients/${patientId}/`),
+                $.ajax(`/reception/billing/${patientId}/`)
+            ).done(function(patientResponse, billingResponse) {
+                const patient = patientResponse[0];
+                const billing = billingResponse[0];
+
+                $('#billing-patient-name').text(`${patient.full_name} (${patientId})`);
+                const pendingTbody = $('#pending-bills-tbody');
+                pendingTbody.empty();
+
+                let totalPending = 0;
+                billing.forEach(item => {
+                    const remaining = parseFloat(item.balance_amount);
+                    pendingTbody.append(`
+                        <tr>
+                            <td>${item.created_at}</td>
+                            <td>${item.treatment_plan ? item.treatment_plan.treatment_plan : 'N/A'}</td>
+                            <td>₹${parseFloat(item.total_amount).toFixed(2)}</td>
+                            <td>₹${parseFloat(item.paid_amount).toFixed(2)}</td>
+                            <td>₹${remaining.toFixed(2)}</td>
+                        </tr>
+                    `);
+                    if (item.payment_status !== 'paid') {
+                        totalPending += remaining;
+                    }
+                });
+
+                $('#total-pending-amount').text(`₹${totalPending.toFixed(2)}`);
+                $('#billing-modal').data('patientId', patientId);
+
+                // Toggle visibility based on pending amount
+                const processPaymentBtn = $('#process-payment-btn');
+                const paymentAmountGroup = $('#payment-amount-group');
+
+                if (totalPending > 0) {
+                    processPaymentBtn.removeClass('hidden');
+                    paymentAmountGroup.removeClass('hidden');
+                } else {
+                    processPaymentBtn.addClass('hidden');
+                    paymentAmountGroup.addClass('hidden');
+                }
+
+                $('#billing-modal').show();
+            }).fail(function(xhr, status, error) {
+                console.error('Error opening billing modal:', error);
+                alert('Failed to load billing data.');
+            });
+        }
+
+        function processPayment() {
+            const patientId = $('#billing-modal').data('patientId');
+            const paymentAmount = parseFloat($('#payment-amount').val());
+            const paymentMethod = $('#payment-method').val();
+
+            if (!paymentAmount || paymentAmount <= 0) {
+                alert("Please enter a valid payment amount.");
+                return;
+            }
+
+            const totalPending = parseFloat($('#total-pending-amount').text().replace('₹', ''));
+            if (paymentAmount > totalPending) {
+                alert("Payment amount cannot exceed the total pending amount.");
+                return;
+            }
+
+            if (totalPending > 0) {
+                $.ajax({
+                    url: `/reception/billing/${patientId}/`,
+                    method: 'GET',
+                    success: function(bills) {
+                        const pendingBills = bills.filter(bill => bill.payment_status !== 'paid');
+                        let remainingPayment = paymentAmount;
+                        let requests = [];
+
+                        // Distribute payment across pending bills
+                        pendingBills.forEach(bill => {
+                            if (remainingPayment <= 0) return;
+                            const amountToPay = Math.min(remainingPayment, parseFloat(bill.balance_amount));
+
+                            // Send only the new payment amount and method, let backend handle totals and status
+                            requests.push(
+                                $.ajax({
+                                    url: `/reception/billing/${patientId}/${bill.id}/`,
+                                    method: 'PUT',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify({
+                                        paid_amount: amountToPay, // Send only the new payment amount
+                                        payment_method: paymentMethod
+                                    })
+                                })
+                            );
+                            remainingPayment -= amountToPay;
+                        });
+
+                        // Execute all payment requests
+                        $.when.apply($, requests).done(function() {
+                            showSuccessMessage("Payment processed successfully!");
+                            closeModal('billing-modal');
+                            fetchPatients(); // Assuming this refreshes the patient list
+                        }).fail(function(xhr, status, error) {
+                            console.error('Error processing payment requests:', error);
+                            alert("Failed to process payment. Please try again.");
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching bills:', error);
+                        alert("Failed to retrieve billing data.");
+                    }
+                });
+            } else {
+                alert("No pending amount to process.");
+            }
+        }
+
+
+        function openAppointmentModal(patientId) {
+            // Fetch patient details
+            $.ajax({
+                url: `/reception/patients/${patientId}/`,
+                method: 'GET',
+                success: function(patient) {
+                    // Set patient name in modal
+                    $('#appointment-patient-name').text(`${patient.full_name} (${patientId})`);
+
+                    // Set default date to today
+                    $('#appointment-date').val(new Date().toISOString().split('T')[0]);
+
+                    // Ensure doctors and branches are loaded
+                    // if (doctors.length === 0 || branches.length === 0) {
+                    //     fetchDoctors();
+                    //     fetchBranches();
+                    // }
+
+                    // Set patient ID on modal data
+                    $('#appointment-modal').data('patientId', patientId).show();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching patient details:', error);
+                    alert('Failed to load patient details');
+                }
+            });
+        }
+
+        function createAppointment() {
+            const patientId = $('#appointment-modal').data('patientId');
+            const timeInput = $('#appointment-time').val();
+            const formattedTime = convertTo24Hour(timeInput);
+
+            const data = {
+                appointment_date: $('#appointment-date').val(),
+                appointment_time: formattedTime,
+                doctor: $('#appointment-doctor').val(),
+                reason: $('#appointment-reason').val(),
+
+                branch: $('#appointment-branch').val(),
+                patient: patientId,
+                status: 'pending'
+            };
+            console.log("Appointment Data:", data); // Debug: Check the appointment data
+            const csrfToken = getCsrfToken();
+            console.log("CSRF Token:", csrfToken); // Debug: Check if token is retrieved
+            if (!csrfToken) {
+                alert("CSRF token is missing. Please refresh the page.");
+                return;
+            }
+
+            $.ajax({
+                url: `/reception/appointments/${patientId}/`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                headers: {
+                    "X-CSRFToken": csrfToken // Explicitly set the header
+                },
+                success: function(response) {
+                    showSuccessMessage("Appointment scheduled successfully!");
+                    closeModal('appointment-modal');
+                    fetchPatients();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    console.error('Response:', xhr.responseText); // Debug: Log the full error
+                    alert(`Failed to schedule appointment: ${xhr.responseText}`);
+                }
+            });
+        }
+
+        function convertTo24Hour(timeStr) {
+            const [time, modifier] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':');
+            if (modifier === 'PM' && hours !== '12') hours = parseInt(hours) + 12;
+            if (modifier === 'AM' && hours === '12') hours = '00';
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+
+        function cancelAppointment(patientId) {
+            $.when(
+                $.ajax(`/reception/patients/${patientId}/`),
+                $.ajax(`/reception/appointments/${patientId}/`)
+            ).done(function(patientResponse, appointmentsResponse) {
+                const patient = patientResponse[0];
+                const appointments = appointmentsResponse[0];
+                const today = new Date().toISOString().split('T')[0];
+                const todaysAppointment = appointments.find(appt => appt.appointment_date === today && (appt.status === 'pending' || appt.status === 'upcoming'));
+                if (!todaysAppointment) {
+                    alert("No appointment to cancel today.");
+                    return;
+                }
+                $('#cancel-patient-name').text(`${patient.full_name} (${patientId})`);
+                $('#cancel-appointment-time').text(todaysAppointment.time);
+                $('#cancel-appointment-modal').data('patientId', patientId).data('appointmentId', todaysAppointment.id).show();
+            }).fail(function(xhr, status, error) {
+                console.error('Error opening cancel modal:', error);
+            });
+        }
+
+        function fetchBranches() {
+            $.ajax({
+                url: `/reception/dropdown/branches/`,
+                method: 'GET',
+                dataType: 'json', // Explicitly specify JSON parsing
+                success: function(response) {
+                    const branchSelectAppointment = $('#appointment-branch'); // For appointment modal
+                    const branchSelectAddPatient = $('#model-branch');       // For add patient modal
+                    branchSelectAppointment.empty();
+                    branchSelectAddPatient.empty();
+
+                    // Add a default option
+                    branchSelectAppointment.append('<option value="">Select Branch</option>');
+                    branchSelectAddPatient.append('<option value="">Select Branch</option>');
+
+                    // Check if branches exist and are in the correct format
+                    const branches = response.branches || {}; // Default to empty object if 'branches' is not present
+
+                    // Ensure the branches object is not empty
+                    if (Object.keys(branches).length > 0) {
+                        // Iterate through each branch using its ID as the key
+                        Object.keys(branches).forEach(id => {
+                            const branch = branches[id];
+                            const option = `<option value="${branch.id}">${branch.name}</option>`;
+                            branchSelectAppointment.append(option);
+                            branchSelectAddPatient.append(option); // Populate both selects
+                        });
+                    } else {
+                        console.warn('No branches found in the response:', branches);
+                        branchSelectAppointment.append('<option value="">No branches available</option>');
+                        branchSelectAddPatient.append('<option value="">No branches available</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching branches:', error);
+                    console.error('Response status:', xhr.status);
+                    console.error('Response text:', xhr.responseText);
+                    $('#appointment-branch').append('<option value="">Error loading branches</option>');
+                    $('#model-branch').append('<option value="">Error loading branches</option>');
+                }
+            });
+        }
+
+        function openPrescriptionModal(patientId) {
+            $.when(
+                $.ajax(`/reception/patients/${patientId}/`), // Fetch patient details
+                $.ajax(`/reception/prescriptions/${patientId}/`) // Fetch prescriptions (corrected endpoint)
+            ).done(function(patientResponse, prescriptionsResponse) {
+                const patient = patientResponse[0];
+                const prescriptionsData = prescriptionsResponse[0];
+
+                // Set patient name
+                $('#prescription-patient-name').text(`${patient.full_name} (${patientId})`);
+
+                // Populate prescription table
+                const tbody = $('#prescription-table-body');
+                tbody.empty();
+
+                // Check if the response contains a message (no prescriptions) or an array of prescriptions
+                if (prescriptionsData && prescriptionsData.message) {
+                    tbody.append(`<tr><td colspan="6" style="text-align: center;">${prescriptionsData.message}</td></tr>`);
+                } else if (prescriptionsData && prescriptionsData.length > 0) {
+                    prescriptionsData.forEach(prescription => {
+                        tbody.append(`
+                            <tr>
+                                <td>${prescription.booking_date || 'N/A'}</td>
+                                <td>${prescription.doctor_name || 'N/A'}</td>
+                                <td>${prescription.medicine_name || 'N/A'}</td>
+                                <td>${prescription.dosage_days || 'N/A'}</td>
+                                <td>${JSON.stringify(prescription.medicine_times) || 'N/A'}</td>
+                                <td>${JSON.stringify(prescription.meal_times) || 'N/A'}</td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    tbody.append(`<tr><td colspan="6" style="text-align: center;">No medicines are prescribed for this patient.</td></tr>`);
+                }
+
+                $('#prescription-modal').show();
+            }).fail(function(xhr, status, error) {
+                console.error('Error fetching prescriptions:', error);
+                $('#prescription-table-body').html(`<tr><td colspan="6" style="text-align: center;">Error loading prescriptions.</td></tr>`);
+                $('#prescription-modal').show();
+            });
+        }
+
+        function confirmCancelAppointment() {
+            const patientId = $('#cancel-appointment-modal').data('patientId');
+            const appointmentId = $('#cancel-appointment-modal').data('appointmentId');
+            const data = {
+                cancellation_reason: $('#cancel-reason').val(),
+                cancellation_notes: $('#cancel-notes').val()
+            };
+
+            $.ajax({
+                url: `/reception/appointments/${patientId}/${appointmentId}/`,
+                method: 'DELETE',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function() {
+                    showSuccessMessage("Appointment cancelled successfully!");
+                    closeModal('cancel-appointment-modal');
+                    fetchPatients();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error cancelling appointment:', error);
+                    alert("Failed to cancel appointment.");
+                }
+            });
+        }
+
+        function closeModal(modalId) {
+            $(`#${modalId}`).hide();
+        }
+
+        function showSuccessMessage(message) {
+            $('#success-message').text(message);
+            $('#success-modal').show();
+        }
+        function reloadPage() {
+            window.location.reload();
+        }
+        function printHistory() {
+            const historyContent = $('#history-modal .modal-content').html();
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head><title>Patient History</title><style>/* Add print styles */</style></head>
+                <body>${historyContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        $(window).click(function(event) {
+            if ($(event.target).hasClass('modal')) {
+                $('.modal').hide();
+            }
+
+        });
+       $(document).on("click", "#back-btn", function () {
+        window.location.href = "{% url 'doctor-dashboard' %}";
+    });
+    </script>
+</body>
+</html>

@@ -41,6 +41,8 @@ from .serializer import  (SuperAdminSerializer,
 #                          TreatmentPriceSerializer, HospitalInfoSerializer,
                         
                           )
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 
 # -------------------------- Super Admin Registration --------------------------#
@@ -364,33 +366,37 @@ class SuperAdminDashboard(APIView):
 # View for SuperAdmin profile
 class SuperadminProfileView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    parser_classes = [MultiPartParser, FormParser]
     template_name = 'superadmin/superadmin_editprofile.html'
 
     def get(self, request):
         superadmin = get_object_or_404(SuperAdmin, user=request.user)
         superadmin_serializer = SuperadminViewProfileSerializer(superadmin)
+        print("Serialized Data: ", superadmin_serializer.data)
 
-        if request.accepted_renderer.format == 'json':
+        # Check if the Accept header is for 'application/json'
+        if request.headers.get('Accept') == 'application/json':
             return Response({'superadmin_profile': superadmin_serializer.data}, status=status.HTTP_200_OK)
+
         return Response({'superadmin_profile': superadmin_serializer.data}, template_name=self.template_name)
 
     def post(self, request):
-        """Fix issue with accessing request body multiple times."""
         superadmin = get_object_or_404(SuperAdmin, user=request.user)
+        data = request.data
+        files = request.FILES  # Get the files from the request
 
-        # Ensure JSON decoding works correctly
-        try:
-            data = request.data  # DRF handles JSON and form data correctly
-        except Exception:
-            return JsonResponse({'error': 'Invalid data format'}, status=400)
+        # Combine data and files to pass to the serializer
+        data.update(files)  # This will add the files to the data
 
         serializer = SuperadminViewProfileSerializer(superadmin, data=data, partial=True)
+
         if serializer.is_valid():
             serializer.save()
             return JsonResponse({"message": "Superadmin profile updated successfully"}, status=200)
-        
+
         return JsonResponse(serializer.errors, status=400)
-    
+
+
 #---------------Change Superadmin Password---------------
 class ChangeSuperadminPassword(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]

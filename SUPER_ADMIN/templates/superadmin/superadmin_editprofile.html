@@ -176,7 +176,7 @@ input:focus {
     <h1>Edit Superadmin Profile</h1>
 
     <div class="superadmin-edit-card">
-        <form id="editsuperadminprofileForm">
+        <form id="editsuperadminprofileForm" method="post" enctype="multipart/form-data">
             <div class="form-row">
                 <div class="form-group">
                     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
@@ -213,6 +213,21 @@ input:focus {
                     <label>Designation:</label>
                     <input type="text" id="designation" name="designation" value="{{ superadmin_profile.designation }}">
                 </div>
+
+                <div class="form-group">
+                    <label>Profile Image:</label>
+                    <input type="file" id="profile_image" name="profile_image" accept="image/*">
+
+                    {% if superadmin_profile.profile_image %}
+                        <p>URL: {{ superadmin_profile.profile_image.url }}</p>
+                        <img src="{{ superadmin_profile.profile_image.url }}" alt="Current Image"
+                             style="width: 100px; height: 100px; margin-top: 5px;">
+                    {% else %}
+                        <p>No profile image uploaded.</p>
+                    {% endif %}
+                </div>
+
+
             </div>
     
             <div class="buttons-container">
@@ -226,42 +241,44 @@ input:focus {
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // Access CSRF token from the meta tag
-    var csrfToken = $("input[name=csrfmiddlewaretoken]").val();
-
+$(document).ready(function () {
     $('#editsuperadminprofileForm').submit(function (e) {
-    e.preventDefault();
+        e.preventDefault();
 
-    var formData = {
-    user: {
-        username: $("#username").val(),  // Add username field if needed
-        first_name: $("#first_name").val(),
-        last_name: $("#last_name").val(),
-        email: $("#email").val()
-    },
-    phone_number: $("#phone_number").val(),
-    address: $("#address").val(),
-    designation: $("#designation").val()
-};
+        let formData = new FormData();
+        formData.append("user[first_name]", $("#first_name").val());
+        formData.append("user[last_name]", $("#last_name").val());
+        formData.append("user[email]", $("#email").val());
+        formData.append("phone_number", $("#phone_number").val());
+        formData.append("address", $("#address").val());
+        formData.append("designation", $("#designation").val());
 
-
-    $.ajax({
-        url: "/superadmin/update-profile/",
-        method: "POST",
-        contentType: "application/json", // Ensure JSON format
-        data: JSON.stringify(formData),  // Convert to JSON
-        headers: { 'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val() },
-        success: function (response) {
-            alert("Superadmin profile updated successfully!");
-            window.location.href = "/superadmin/superadmindashboard/";
-        },
-        error: function (xhr) {
-            alert("Error updating Superadmin Profile: " + xhr.responseText);
+        const imageInput = $("#profile_image")[0];
+        if (imageInput && imageInput.files.length > 0) {
+            formData.append("profile_image", imageInput.files[0]);
         }
+
+        $.ajax({
+            url: "/superadmin/update-profile/",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': $("input[name='csrfmiddlewaretoken']").val()
+            },
+            success: function (response) {
+                alert("Profile updated successfully!");
+                window.location.href = "/superadmin/superadmindashboard/";
+            },
+            error: function (xhr) {
+                alert("Error: " + xhr.responseText);
+            }
+        });
     });
 });
-
 </script>
+
 
 
 {% endblock %}

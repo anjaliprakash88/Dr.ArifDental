@@ -315,23 +315,22 @@ class UserViewProfileSerializer(serializers.ModelSerializer):
 
 # Serializer for SuperAdmin model
 class SuperadminViewProfileSerializer(serializers.ModelSerializer):
-    user = UserViewProfileSerializer()  # Keep nested serializer for readability
+    user = UserViewProfileSerializer()
+    profile_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = SuperAdmin
-        fields = ['user', 'phone_number', 'address', 'designation']
+        fields = ['user', 'phone_number', 'address', 'designation', 'profile_image']
 
     def update(self, instance, validated_data):
-        user_data = validated_data.pop('user', None)  # Extract user data safely
-        user = instance.user  # Reference to related User model
-        
-        # Update User model fields if data is provided
+        user_data = validated_data.pop('user', None)
+        user = instance.user
+
         if user_data:
             for attr, value in user_data.items():
                 setattr(user, attr, value)
             user.save()
 
-        # Update SuperAdmin fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
