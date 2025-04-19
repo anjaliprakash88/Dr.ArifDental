@@ -410,6 +410,198 @@ class DentalExaminationCheckup(APIView):
             "created_prescriptions": created_prescriptions
         }, status=status.HTTP_200_OK)
 
+# ---------------DENTAL EXAMINATION--------------
+class PediatricExaminationCheckup(APIView):
+    renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
+    template_name = "doctor/pediatric_page.html"
+
+    def get(self, request, booking_id, format=None):
+        doctor = request.user.doctor
+        booking = get_object_or_404(PatientBooking, id=booking_id)
+        patient = booking.patient
+        age = patient.age
+        examination, created = DentalExamination.objects.get_or_create(patient=patient, booking=booking)
+        examination_serializer = DentalExaminationSerializer(examination)
+        patient_name = patient.full_name
+
+        previous_booking = (
+            PatientBooking.objects
+            .filter(patient=patient, appointment_date__lt=booking.appointment_date)
+            .order_by('-appointment_date', '-id')
+            .first()
+        )
+
+        dentition = Dentition.objects.filter(patient=patient, booking=booking).first()
+        if dentition:
+            dentition_serializer = DentitionSerializer(dentition)
+        else:
+            dentition_serializer = None
+        treatments = DentitionTreatment.objects.all()
+
+        treatment_bill, created = TreatmentBill.objects.get_or_create(
+            booking=booking,
+            dental_examination=examination,
+            defaults={'patient': patient, 'total_amount': 0.00, 'paid_amount': 0.00}
+        )
+        treatment_bill_serializer = TreatmentBillSerializer(treatment_bill)
+
+        if format == 'json':
+            return Response({
+                "dentition": dentition_serializer.data if dentition_serializer else {},
+                "previous_booking_id": previous_booking.id if previous_booking else None,
+                "examination": examination_serializer.data,
+                "treatment_bill": treatment_bill_serializer.data,
+                "treatments": DentitionTreatmentSerializer(treatments, many=True).data,
+                "age": age
+            }, status=status.HTTP_200_OK)
+
+        return render(request, self.template_name, {
+            "dentition": dentition_serializer.data if dentition_serializer else {},
+            "examination": examination_serializer.data,
+            "booking": booking,
+            'doctor': doctor,
+            "previous_booking_id": previous_booking.id if previous_booking else None,
+            "booking_id": booking.id,
+            "patient_name": patient_name,
+            "treatments": treatments,
+            "treatment_bill": treatment_bill_serializer.data,
+            "age": age
+        })
+
+    def post(self, request, booking_id, format=None):
+        booking = get_object_or_404(PatientBooking, id=booking_id)
+        patient = booking.patient
+
+        examination = DentalExamination.objects.filter(patient=patient, booking=booking).order_by('-created_at').first()
+        if not examination:
+            examination = DentalExamination.objects.create(patient=patient, booking=booking)
+
+
+        examination_fields = [
+            "chief_complaints", "history_of_present_illness", "medical_history",
+            "personal_history", "general_examination", "general_examination_intraoral",
+            "local_examination_extraoral", "soft_tissue", "periodontal_status", "treatment_plan"
+        ]
+
+        if any(field in request.POST for field in examination_fields):
+            examination.chief_complaints = request.data.get("chief_complaints", examination.chief_complaints)
+            examination.history_of_present_illness = request.data.get("history_of_present_illness",
+                                                                      examination.history_of_present_illness)
+            examination.medical_history = request.data.get("medical_history", examination.medical_history)
+            examination.personal_history = request.data.get("personal_history", examination.personal_history)
+            examination.general_examination = request.data.get("general_examination", examination.general_examination)
+            examination.general_examination_intraoral = request.data.get("general_examination_intraoral",
+                                                                         examination.general_examination_intraoral)
+            examination.local_examination_extraoral = request.data.get("local_examination_extraoral",
+                                                                       examination.local_examination_extraoral)
+            examination.soft_tissue = request.data.get("soft_tissue", examination.soft_tissue)
+            examination.periodontal_status = request.data.get("periodontal_status", examination.periodontal_status)
+            examination.treatment_plan = request.data.get("treatment_plan", examination.treatment_plan)
+            examination.save()
+
+
+        if 'investigation[]' in request.FILES:
+            for file in request.FILES.getlist('investigation[]'):
+                if not Investigation.objects.filter(dental_examination=examination, image=file.name).exists():
+                    Investigation.objects.create(
+                        dental_examination=examination,
+                        image=file
+                    )
+
+
+        dentitions = request.data.get("dentitions", [])  # Ensure it's a list
+
+        created_dentitions = []
+        for dentition_data in dentitions:
+            selected_teeth = dentition_data.get("selected_teeth")
+            treatment_name = dentition_data.get("treatment")
+
+            # Fetch or create the treatment
+            treatment, created = DentitionTreatment.objects.get_or_create(
+                name=treatment_name,
+                defaults={"color_code": request.data.get("color_code", "#000000")}
+            )
+
+            # Create Dentition instance
+            dentition, created = Dentition.objects.update_or_create(
+                patient=patient,
+                booking=booking,
+                selected_teeth=selected_teeth,
+                treatment=treatment,
+                note=dentition_data.get("note", "")
+            )
+            created_dentitions.append(dentition)
+
+        diagnosis_text = request.data.get("diagnosis", "").strip()
+        if diagnosis_text:
+            diagnosis_obj, created = Diagnosis.objects.update_or_create(
+                patient=patient,
+                booking=booking,
+                defaults={"diagnosis": diagnosis_text}
+            )
+        else:
+            diagnosis_obj = None
+
+        medicines_data = request.data.get('medicines', [])
+        created_prescriptions = []
+        errors = []
+
+        for med in medicines_data:
+            try:
+                medicine_id = med.get('medicine')
+                medicine = get_object_or_404(PharmaceuticalMedicine, id=medicine_id)
+
+                prescription_data = {
+                    'booking': booking.id,  # Pass actual booking instance
+                    'medicine': medicine.id,
+                    'dosage_days': med.get('dosage_days', 1),
+                    'medicine_times': med.get('medicine_times', []),  # Now expects a JSON list
+                    'meal_times': med.get('meal_times', [])  # Now expects a JSON list
+                }
+
+                serializer = PrescriptionSerializer(data=prescription_data)
+                if serializer.is_valid():
+                    prescription = serializer.save()
+                    created_prescriptions.append(PrescriptionSerializer(prescription).data)
+                else:
+                    errors.append(serializer.errors)
+            except Exception as e:
+                errors.append(str(e))
+
+        if errors:
+            return Response(
+                {"error": "Some medicines could not be saved", "details": errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        treatment_bill, created = TreatmentBill.objects.get_or_create(
+            booking=booking,
+            dental_examination=examination,
+            defaults={'patient': patient, 'total_amount': 0.00, 'paid_amount': 0.00, 'balance_amount': 0.00}
+        )
+
+        def safe_decimal(value, default=Decimal('0.00')):
+            try:
+                return Decimal(value)
+            except (InvalidOperation, TypeError, ValueError):
+                return default
+
+        treatment_bill.total_amount = safe_decimal(request.data.get("total_amount"))
+        treatment_bill.paid_amount = safe_decimal(request.data.get("paid_amount"))
+        treatment_bill.balance_amount = treatment_bill.total_amount - treatment_bill.paid_amount
+        treatment_bill.save()
+
+        booking.status = 'completed'
+        booking.save()
+
+        return Response({
+            "message": "Checkup details and dentition data saved successfully!",
+            "examination": DentalExaminationSerializer(examination).data,
+            "diagnosis": DiagnosisSerializer(diagnosis_obj).data if diagnosis_obj else None,
+            "treatment_bill": TreatmentBillSerializer(treatment_bill).data,
+            "created_prescriptions": created_prescriptions
+        }, status=status.HTTP_200_OK)
+
 #------------CHANGE DOCTOR PASSWORD------------
 class ChangeDoctorPassword(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]

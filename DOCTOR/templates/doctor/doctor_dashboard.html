@@ -301,34 +301,53 @@
 
 
 <!---------------TODAY BOOKING DATA TABLE--------------->
-$(document).ready(function() {
+$(document).ready(function () {
     var table = $('#bookingsTable').DataTable({
         responsive: true,
+        columnDefs: [
+            { width: "30%", targets: 0 },
+            { width: "15%", targets: 1 },
+            { width: "15%", targets: 2 },
+            { width: "20%", targets: 3 },
+            { width: "30%", targets: 4 },
+        ],
         columns: [
             { data: 'patient_name' },
             { data: 'gender' },
             { data: 'age' },
-            { data: 'appointment_time' },
+            { data: 'appointment_time' },  // Display appointment time, but don't use it for date comparison
             {
                 data: null,
                 orderable: false,
-                render: function(data, type, row) {
-                    if (row.appointment_time) {
-                        return `<button class="btn btn-primary checkup fw-bold" data-id="${row.id}">CheckUp</button>`;
+                render: function (data, type, row) {
+                    const today = new Date().toISOString().split("T")[0];  // Get today's date in YYYY-MM-DD format
+                    const appointmentDate = row.appointment_date ? row.appointment_date : null;  // Use appointment_date for comparison
+
+                    // Compare appointment_date with today's date to determine if buttons should be enabled
+                    if (appointmentDate === today) {
+                        return `
+                            <button class="btn btn-success adult fw-bold" data-id="${row.id}">Adult</button>
+                            <button class="btn btn-warning pediatric fw-bold" data-id="${row.id}">Pediatric</button>
+                        `;
                     } else {
-                        return `<button class="btn btn-secondary" disabled>CheckUp</button>`;
+                        return `
+                            <button class="btn btn-success" disabled>Adult</button>
+                            <button class="btn btn-warning" disabled>Pediatric</button>
+                        `;
                     }
                 }
-                }
+            }
         ]
     });
 
+    // Fetch appointments and populate the table
     function fetchBookings() {
         $.ajax({
             url: `/doctor/dashboard/`,
             type: "GET",
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
+                console.log(response); // Log the response to check data
                 table.clear();
                 if (response.appointments.length > 0) {
                     table.rows.add(response.appointments).draw();
@@ -342,13 +361,41 @@ $(document).ready(function() {
                     }).draw();
                 }
             },
-            error: function() {
+            error: function () {
                 alert("Failed to load bookings. Please try again.");
             }
         });
     }
 
-    fetchBookings();
+    fetchBookings(); // Load initial data
+
+    // Handle Adult button click
+    $(document).on("click", ".adult", function () {
+        const bookingId = $(this).data("id");
+        if (!bookingId) {
+            alert("Invalid booking ID!");
+            return;
+        }
+        window.location.href = `/doctor/checkup/${bookingId}/`;
+    });
+
+    // Handle Pediatric button click
+    $(document).on("click", ".pediatric", function () {
+        const bookingId = $(this).data("id");
+        if (!bookingId) {
+            alert("Invalid booking ID!");
+            return;
+        }
+        window.location.href = `/doctor/pediatric/${bookingId}/`;
+    });
+
+
+
+
+
+
+
+
 
     // Handle click events for buttons
     $(document).on("click", ".treatment-summary", function() {
