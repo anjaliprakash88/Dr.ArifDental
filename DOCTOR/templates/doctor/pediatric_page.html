@@ -1172,7 +1172,7 @@ $(document).ready(function() {
             headers: { 'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
             success: function (response) {
                 alert('Medicine saved successfully!');
-                addMedicineItem();
+
             },
             error: function (xhr) {
                 console.error('Error:', xhr.responseText);
@@ -1450,7 +1450,6 @@ $(document).ready(function () {
             data: JSON.stringify({ dentitions: dentitionData }),
             success: function (response) {
                 alert("Dentition data saved successfully!");
-                addDentitionItem();
                 resetSelections();
                 activeFormId = 0;
             },

@@ -224,9 +224,9 @@ class PharmacyCreateSerializer(serializers.ModelSerializer):
 #----------------------Doctor Serializer--------------------------------
 
 class DoctorCreateSerializer(serializers.ModelSerializer):
-    first_name = serializers.CharField(source='user.first_name', read_only=True)
-    last_name = serializers.CharField(source='user.last_name', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    email = serializers.EmailField(source='user.email')
     profile_image = serializers.ImageField(required=False, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
@@ -243,24 +243,25 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
         return obj.branch.name if obj.branch else None
 
     def create(self, validated_data):
-        # Extract user-related fields
-        first_name = validated_data.pop('first_name')
-        last_name = validated_data.pop('last_name')
-        email = validated_data.pop('email')
+        # Extract nested user data
+        user_data = validated_data.pop('user')
 
+        # Generate a random password and create a username
         password = self._generate_random_password()
-        username = f"{first_name.lower()}_{last_name.lower()}"
+        username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
 
+        # Create user instance
         user_instance = get_user_model()(
             username=username,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
+            first_name=user_data['first_name'],
+            last_name=user_data['last_name'],
+            email=user_data['email'],
             is_doctor=True
         )
         user_instance.set_password(password)
         user_instance.save()
 
+        # Create doctor profile
         profile_image = validated_data.pop('profile_image', None)
 
         doctor_instance = Doctor.objects.create(
@@ -269,15 +270,17 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        self.send_reception_id_email(email, username, password)
+        # Send login details via email
+        self.send_doctor_credentials_email(user_data['email'], username, password)
         return doctor_instance
 
-    def send_reception_id_email(self, email, username, password):
+    def send_doctor_credentials_email(self, email, username, password):
         subject = "Doctor Account Details"
         message = (
             f"Dear Doctor,\n\n"
-            f"Your account has been created. Here are the login details:\n\n"
+            f"Your account has been created. Here are your login details:\n\n"
             f"Username: {username}\nPassword: {password}\n\n"
+            f"Please log in and change your password after first login.\n\n"
             f"Thank you!"
         )
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -285,7 +288,6 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
 
     def _generate_random_password(self):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
 
     
 #---------------------------

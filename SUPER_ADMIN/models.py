@@ -48,7 +48,9 @@ class Doctor(models.Model):
             ('Orthodontist', 'Orthodontist'),
             ('Periodontist', 'Periodontist'),
             ('Endodontist', 'Endodontist'),
-            ('Prosthodontist', 'Prosthodontist')
+            ('Prosthodontist', 'Prosthodontist'),
+            ('Pediatric Dentist', 'Pediatric Dentist'),
+            ('Oral Pathologist', 'Oral Pathologist')
         ]
     )
     experience_years = models.PositiveIntegerField()

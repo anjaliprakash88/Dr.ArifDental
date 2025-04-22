@@ -1013,8 +1013,6 @@ function initializeDentitionChart() {
                 data: JSON.stringify({ dentitions: dentitionData }),
                 success: function (response) {
                     alert("Dentition data saved successfully!");
-                    $("#dentition-items-container").empty();
-                    addDentitionItem();
                     resetSelections();
                     activeFormId = 0;
                 },
@@ -1315,8 +1313,7 @@ $(document).ready(function () {
                 headers: { 'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
                 success: function (response) {
                     alert('Medicine saved successfully!');
-                    $('#medicine-items-container').empty();
-                    addMedicineItem();
+
                 },
                 error: function (xhr) {
                     console.error('Error:', xhr.responseText);

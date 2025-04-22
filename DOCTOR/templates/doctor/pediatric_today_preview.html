@@ -967,8 +967,6 @@ function initializeDentitionChart() {
                 data: JSON.stringify({ dentitions: dentitionData }),
                 success: function (response) {
                     alert("Dentition data saved successfully!");
-                    $("#dentition-items-container").empty();
-                    addDentitionItem();
                     resetSelections();
                     activeFormId = 0;
                 },
@@ -1238,11 +1236,6 @@ $(document).ready(function () {
                     mealTimes.push($(this).val());
                 });
 
-                console.log(`== Checking item ${itemId} ==`);
-                console.log("Medicine ID:", medicineId);
-                console.log("Dosage Days:", dosageDays);
-                console.log("Medicine Times:", medicineTimes);
-                console.log("Meal Times:", mealTimes);
 
                 if (!medicineId || !dosageDays || medicineTimes.length === 0 || mealTimes.length === 0) {
                     alert('Please fill all fields correctly.');
@@ -1269,8 +1262,6 @@ $(document).ready(function () {
                 headers: { 'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() },
                 success: function (response) {
                     alert('Medicine saved successfully!');
-                    $('#medicine-items-container').empty();
-                    addMedicineItem();
                 },
                 error: function (xhr) {
                     console.error('Error:', xhr.responseText);

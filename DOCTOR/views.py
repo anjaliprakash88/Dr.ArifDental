@@ -38,7 +38,7 @@ import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from rest_framework.permissions import AllowAny
 
 class DeleteInvestigationView(APIView):
     renderer_classes = [JSONRenderer, TemplateHTMLRenderer]
