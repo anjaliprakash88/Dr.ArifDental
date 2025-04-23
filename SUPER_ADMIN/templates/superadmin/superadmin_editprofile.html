@@ -239,42 +239,45 @@ input:focus {
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $('#editsuperadminprofileForm').submit(function (e) {
-            e.preventDefault();
+$(document).ready(function () {
+    $('#editsuperadminprofileForm').submit(function (e) {
+        e.preventDefault();
 
-            let formData = new FormData();
-            formData.append("user[first_name]", $("#first_name").val());
-            formData.append("user[last_name]", $("#last_name").val());
-            formData.append("user[email]", $("#email").val());
-            formData.append("phone_number", $("#phone_number").val());
-            formData.append("address", $("#address").val());
-            formData.append("designation", $("#designation").val());
+        let formData = new FormData();
+        const userData = {
+            first_name: $("#first_name").val(),
+            last_name: $("#last_name").val(),
+            email: $("#email").val()
+        };
+        formData.append("user", JSON.stringify(userData));
 
-<!--            const imageInput = $("#profile_image")[0];-->
-<!--            if (imageInput && imageInput.files.length > 0) {-->
-<!--                formData.append("profile_image", imageInput.files[0]);-->
-<!--            }-->
+        formData.append("phone_number", $("#phone_number").val());
+        formData.append("address", $("#address").val());
+        formData.append("designation", $("#designation").val());
 
-            $.ajax({
-                url: "/superadmin/update-profile/",
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-CSRFToken': $("input[name='csrfmiddlewaretoken']").val()
-                },
-                success: function (response) {
-                    alert("Profile updated successfully!");
-                    window.location.href = "/superadmin/superadmindashboard/";
-                },
-                error: function (xhr) {
-                    alert("Error: " + xhr.responseText);
-                }
-            });
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ": " + pair[1]);
+        }
+
+        $.ajax({
+            url: "/superadmin/update-profile/",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': $("input[name='csrfmiddlewaretoken']").val()
+            },
+            success: function (response) {
+                alert("Profile updated successfully!");
+            },
+            error: function (xhr) {
+                alert("Error updating profile. Please check console for details.");
+            }
         });
     });
+});
+
 </script>
 
 

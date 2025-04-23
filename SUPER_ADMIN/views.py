@@ -363,7 +363,7 @@ class SuperAdminDashboard(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-# View for SuperAdmin profile
+"""SUPERADMIN VIEW & EDIT PROFILE"""
 class SuperadminProfileView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
     parser_classes = [MultiPartParser, FormParser]
@@ -371,10 +371,10 @@ class SuperadminProfileView(APIView):
 
     def get(self, request):
         superadmin = get_object_or_404(SuperAdmin, user=request.user)
+        superadmin.refresh_from_db()
+        superadmin.user.refresh_from_db()
         superadmin_serializer = SuperadminViewProfileSerializer(superadmin)
-        print("Serialized Data: ", superadmin_serializer.data)
 
-        # Check if the Accept header is for 'application/json'
         if request.headers.get('Accept') == 'application/json':
             return Response({'superadmin_profile': superadmin_serializer.data}, status=status.HTTP_200_OK)
 
@@ -382,19 +382,33 @@ class SuperadminProfileView(APIView):
 
     def post(self, request):
         superadmin = get_object_or_404(SuperAdmin, user=request.user)
-        data = request.data
-        files = request.FILES  # Get the files from the request
+        data = request.data.copy()
+        files = request.FILES
 
-        # Combine data and files to pass to the serializer
-        data.update(files)  # This will add the files to the data
+        if 'user' in data and isinstance(data['user'], str):
+            try:
+                data['user'] = json.loads(data['user'])
+                print("Parsed user data:", data['user'])
+            except json.JSONDecodeError:
+                return JsonResponse({"error": "Invalid JSON format in 'user'"}, status=400)
+        data.update(files)
 
         serializer = SuperadminViewProfileSerializer(superadmin, data=data, partial=True)
 
         if serializer.is_valid():
-            serializer.save()
-            return JsonResponse({"message": "Superadmin profile updated successfully"}, status=200)
+            updated_instance = serializer.save()
 
-        return JsonResponse(serializer.errors, status=400)
+            if 'user' in data:
+                user_data = data['user']
+                for attr, value in user_data.items():
+                    setattr(updated_instance.user, attr, value)
+                updated_instance.user.save()
+
+            superadmin.refresh_from_db()
+            return JsonResponse({"message": "Superadmin profile updated successfully"}, status=200)
+        else:
+            return JsonResponse(serializer.errors, status=400)
+
 
 
 #---------------Change Superadmin Password---------------

@@ -324,7 +324,7 @@ class UserViewProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'first_name', 'last_name', 'email']
 
-# Serializer for SuperAdmin model
+# ---------------SUPERADMIN VIEW PROFILE---------------
 class SuperadminViewProfileSerializer(serializers.ModelSerializer):
     user = UserViewProfileSerializer()
     profile_image = serializers.ImageField(required=False, allow_null=True)
@@ -340,13 +340,17 @@ class SuperadminViewProfileSerializer(serializers.ModelSerializer):
         if user_data:
             for attr, value in user_data.items():
                 setattr(user, attr, value)
+                print(f"Updating user {attr} = {value}")
             user.save()
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+            print(f"Updating superadmin {attr} = {value}")
+
         instance.save()
 
         return instance
+
 
 class LabOrderSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
