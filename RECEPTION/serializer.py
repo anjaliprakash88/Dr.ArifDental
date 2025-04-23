@@ -238,7 +238,7 @@ class PharmaceuticalMedicineSerializer(serializers.ModelSerializer):
         model = PharmaceuticalMedicine
         fields = [
             'id', 'medicine_name', 'medicine_type', 'supplier', 'category',
-            'batch_number', 'branch',
+            'batch_number',
             'quantity_in_stock', 'reorder_level', 'unit_price',
             'expiry_date', 'storage_instructions', 'is_active',
             'created_at', 'updated_at', 'is_expired', 'is_low_stock'

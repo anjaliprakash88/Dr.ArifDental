@@ -292,9 +292,7 @@
                                     <th>Email</th>
                                     <th>Experience (Years)</th>
                                     <th>Qualification</th>
-                                    <th>Phone</th>
                                     <th>Branch</th>
-                                    <th>Image</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -410,181 +408,161 @@
 
         // Check if the input is valid
         if (!input.checkValidity()) {
-            errorMessage.textContent = input.validationMessage; // Display browser's built-in validation message
+            errorMessage.textContent = input.validationMessage;
         }
     }
 
     $(document).ready(function () {
-        const table = $('#receptionistTable').DataTable({
-            "ajax": {
-                "url": "/superadmin/reception-create/",
-                "type": "GET",
-                "dataSrc": "serializer"
+    const table = $('#receptionistTable').DataTable({
+        "ajax": {
+            "url": "/superadmin/reception-create/",
+            "type": "GET",
+            "dataSrc": "serializer"
+        },
+        "columns": [
+            {
+                "data": null,
+                "render": function (data, type, row) {
+                    return `<span class="toggle-indicator">▶</span> ${row.user.first_name} ${row.user.last_name}`;
+                }
             },
-            "columns": [
-                {
-                    "data": null,
-                    "render": function(data, type, row) {
-                        return `<span class="toggle-indicator">▶</span> ${row.user.first_name} ${row.user.last_name}`;
-                    }
-                },
-                { "data": "user.email" },
-                {
-                    "data": "experience_years",
-                    "render": function(data) {
-                        return data + " years";
-                    }
-                },
-                { "data": "qualification" },
-                { "data": "phone_number" },
-                {
-                    "data": "branch_name",
-                    "render": function(data) {
-                        return data ? data : "N/A";
-                    }
-                },
-                {
-                    "data": "profile_image",
-                    "render": function(data) {
-                        if (data) {
-                            return `<img src="${data}" alt="Profile" width="50" height="50" class="rounded-circle">`;
-                        } else {
-                            return `<span class="text-muted">No Image</span>`;
-                        }
-                    }
+            { "data": "user.email" },
+            { "data": "qualification" },
+            {
+                "data": "experience_years",
+                "render": function (data) {
+                    return data + " years";
                 }
-            ],
-            "ordering": true,
-            "searching": true,
-            "paging": true,
-            "info": true,
-            "lengthChange": true,
-            "autoWidth": false,
-            "responsive": true,
-            "language": {
-                "emptyTable": "No receptionists available",
-                "zeroRecords": "No matching records found"
-            }
-        });
-
-        $('#receptionistTable tbody').on('click', 'tr', function() {
-            const tr = $(this);
-            const row = table.row(tr);
-            if (row.child.isShown()) {
-                row.child.hide();
-                tr.find('.toggle-indicator').html('▶');
-            } else {
-                const rowData = row.data();
-                row.child(formatReceptionistDetails(rowData)).show();
-                tr.find('.toggle-indicator').html('▼');
-            }
-        });
-
-        function formatReceptionistDetails(d) {
-            const imageHTML = d.profile_image
-                ? `<img src="${d.profile_image}" alt="Profile Image" width="100" height="100" style="border-radius: 10px;">`
-                : `<span class="text-muted">No profile image uploaded</span>`;
-
-            return `
-                <div class="receptionist-details" style="display: flex; gap: 30px;">
-                    <div>${imageHTML}</div>
-                    <div style="flex: 1;">
-                        <div class="detail-row">
-                            <div class="detail-label">Address:</div>
-                            <div class="detail-value">${d.address}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">ID:</div>
-                            <div class="detail-value">${d.id}</div>
-                        </div>
-                    </div>
-                </div>`;
-        }
-
-        function fetchBranches() {
-            $.ajax({
-                url: `/superadmin/branch/`,
-                type: 'GET',
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                success: function (response) {
-                    const branchSelect = $('#model-branch');
-                    branchSelect.empty().append(`<option value="">Select a branch</option>`);
-                    if (Array.isArray(response)) {
-                        response.forEach(branch => {
-                            branchSelect.append(`<option value="${branch.id}">${branch.name}</option>`);
-                        });
-                    } else {
-                        alert("Error: Unexpected data format received!");
-                    }
-                },
-                error: function (xhr) {
-                    alert(`Failed to fetch branches: ${xhr.statusText}`);
+            },
+            {
+                "data": "branch_name",
+                "render": function (data) {
+                    return data ? data : "N/A";
                 }
-            });
+            }
+        ],
+        "ordering": true,
+        "searching": true,
+        "paging": true,
+        "info": true,
+        "lengthChange": true,
+        "autoWidth": false,
+        "responsive": true,
+        "language": {
+            "emptyTable": "No receptionists available",
+            "zeroRecords": "No matching records found"
         }
+    });
 
-        fetchBranches();
+    $('#receptionistTable tbody').on('click', 'tr', function () {
+        const tr = $(this);
+        const row = table.row(tr);
+        if (row.child.isShown()) {
+            row.child.hide();
+            tr.find('.toggle-indicator').html('▶');
+        } else {
+            const rowData = row.data();
+            row.child(formatReceptionistDetails(rowData)).show();
+            tr.find('.toggle-indicator').html('▼');
+        }
+    });
 
+    function formatReceptionistDetails(d) {
+        const imageHTML = d.profile_image
+            ? `<img src="${d.profile_image}" alt="Profile Image" width="100" height="100" style="border-radius: 10px;">`
+            : `<span class="text-muted">No profile image uploaded</span>`;
 
-
-        // Handle form submission
-       $('#receptionistRegistrationForm').on('submit', function (event) {
-    event.preventDefault();
-
-    // Show loading modal
-    $('#loadingModal').css('display', 'flex');
-
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    const formData = new FormData();
-    formData.append("address", $('#modal-address').val());
-    formData.append("experience_years", $('#modal-experience-years').val());
-    formData.append("qualification", $('#modal-qualification').val());
-    formData.append("phone_number", $('#modal-phone-number').val());
-    formData.append("branch", $('#model-branch').val());
-
-    const imageFile = $('#modal-profile-image')[0].files[0];
-    if (imageFile) {
-        formData.append("profile_image", imageFile);
+        return `
+            <div class="receptionist-details" style="display: flex; gap: 30px;">
+                <div>${imageHTML}</div>
+                <div style="flex: 1;">
+                    <div class="detail-row"><strong>Phone:</strong> ${d.phone_number || "N/A"}</div>
+                    <div class="detail-row"><strong>Address:</strong> ${d.address || "N/A"}</div>
+                    <div class="detail-row"><strong>ID:</strong> ${d.id}</div>
+                </div>
+            </div>`;
     }
 
-    formData.append("user.first_name", $('#modal-first-name').val());
-    formData.append("user.last_name", $('#modal-last-name').val());
-    formData.append("user.email", $('#modal-email').val());
+    function fetchBranches() {
+        $.ajax({
+            url: `/superadmin/branch/`,
+            type: 'GET',
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            success: function (response) {
+                const branchSelect = $('#model-branch');
+                branchSelect.empty().append(`<option value="">Select a branch</option>`);
+                if (Array.isArray(response)) {
+                    response.forEach(branch => {
+                        branchSelect.append(`<option value="${branch.id}">${branch.name}</option>`);
+                    });
+                } else {
+                    alert("Error: Unexpected data format received!");
+                }
+            },
+            error: function (xhr) {
+                alert(`Failed to fetch branches: ${xhr.statusText}`);
+            }
+        });
+    }
 
-    $.ajax({
-        url: `/superadmin/reception-create/`,
-        type: 'POST',
-        data: formData,
-        headers: { "X-CSRFToken": csrftoken },
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            $('#loadingModal').css('display', 'none');
-            $('.success-message').fadeIn();
-            setTimeout(() => $('.success-message').fadeOut(), 3000);
-            $('#receptionistRegistrationForm')[0].reset();
-            table.ajax.reload();
-            $('#receptionists-list-tab').tab('show');
-        },
-        error: function (xhr) {
-            $('#loadingModal').css('display', 'none');
-            alert(`Failed to register Receptionist: ${xhr.responseJSON?.error || xhr.statusText || 'Unknown error'}`);
+    fetchBranches();
+
+    // Handle form submission
+    $('#receptionistRegistrationForm').on('submit', function (event) {
+        event.preventDefault();
+
+        $('#loadingModal').css('display', 'flex');
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const formData = new FormData();
+        formData.append("address", $('#modal-address').val());
+        formData.append("experience_years", $('#modal-experience-years').val());
+        formData.append("qualification", $('#modal-qualification').val());
+        formData.append("phone_number", $('#modal-phone-number').val());
+        formData.append("branch", $('#model-branch').val());
+
+        const imageFile = $('#modal-profile-image')[0].files[0];
+        if (imageFile) {
+            formData.append("profile_image", imageFile);
         }
+
+        formData.append("user.first_name", $('#modal-first-name').val());
+        formData.append("user.last_name", $('#modal-last-name').val());
+        formData.append("user.email", $('#modal-email').val());
+
+        $.ajax({
+            url: `/superadmin/reception-create/`,
+            type: 'POST',
+            data: formData,
+            headers: { "X-CSRFToken": csrftoken },
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                $('#loadingModal').css('display', 'none');
+                $('.success-message').fadeIn();
+                setTimeout(() => $('.success-message').fadeOut(), 3000);
+                $('#receptionistRegistrationForm')[0].reset();
+                table.ajax.reload();
+                $('#receptionists-list-tab').tab('show');
+            },
+            error: function (xhr) {
+                $('#loadingModal').css('display', 'none');
+                alert(`Failed to register Receptionist: ${xhr.responseJSON?.error || xhr.statusText || 'Unknown error'}`);
+            }
+        });
+    });
+
+    // Input focus animation
+    document.querySelectorAll('.form-control, .form-select').forEach(input => {
+        input.addEventListener('focus', function () {
+            this.style.transform = 'translateY(-2px)';
+        });
+
+        input.addEventListener('blur', function () {
+            this.style.transform = 'translateY(0)';
+        });
     });
 });
 
-
-        // Add animation to inputs on focus
-        document.querySelectorAll('.form-control, .form-select').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.style.transform = 'translateY(-2px)';
-            });
-
-            input.addEventListener('blur', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-    });
 </script>
 {% endblock %}

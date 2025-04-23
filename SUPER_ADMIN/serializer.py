@@ -179,12 +179,10 @@ class BranchSerializer(serializers.ModelSerializer):
 # ----------------------------- PHARMACY SERIALIZER -------------------------- #
 class PharmacyCreateSerializer(serializers.ModelSerializer):
     user = UserSerializer2()
-    branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
-    branch_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Pharmacy
-        fields = ['id', 'experience_years', 'qualification', 'phone_number', 'address', 'user', 'branch','branch_name']
+        fields = ['id', 'experience_years', 'qualification', 'phone_number', 'address', 'user']
     
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
