@@ -19,7 +19,7 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email']
+        fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active']
         extra_kwargs = {'password': {'write_only': True}}
 
 # ----------------------------- USER SERIALIZER ----------------------------- #
@@ -27,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserSerializer2(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email']
+        fields = ['id', 'first_name', 'last_name', 'email', 'is_active']
         extra_kwargs = {'password': {'write_only': True}}
     
 # --------------------------- SUPER ADMIN SERIALIZER ------------------------- #
@@ -42,7 +42,7 @@ class SuperAdminSerializer(serializers.ModelSerializer):
         model = SuperAdmin
         fields = [
             'username', 'password', 'first_name', 'last_name', 'email',
-            'phone_number', 'address', 'designation', 'profile_image'
+            'phone_number', 'address', 'designation', 'profile_image', 'is_active'
         ]
 
     def create(self, validated_data):
@@ -116,7 +116,7 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
         model = Receptionist
         fields = [
             'id', 'experience_years', 'qualification', 'phone_number', 'address',
-            'user', 'branch', 'branch_name', 'profile_image'
+            'user', 'branch', 'branch_name', 'profile_image', 'is_active'
         ]
 
     def get_branch_name(self, obj):
@@ -236,7 +236,7 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'experience_years', 'specialization', 'qualification',
             'phone_number', 'address', 'branch', 'branch_name', 'profile_image',
-            'first_name', 'last_name', 'email'
+            'first_name', 'last_name', 'email', 'is_active'
         ]
 
     def get_branch_name(self, obj):
@@ -299,7 +299,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class SuperAdminUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SuperAdmin
-        fields = ['phone_number', 'address', 'designation']
+        fields = ['phone_number', 'address', 'designation', 'is_active']
 
 #----------------------Hospital Inventory Serializer--------------------------------
 class HospitalInventorySerializer(serializers.ModelSerializer):
@@ -331,7 +331,7 @@ class SuperadminViewProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SuperAdmin
-        fields = ['user', 'phone_number', 'address', 'designation', 'profile_image']
+        fields = ['user', 'phone_number', 'address', 'designation', 'profile_image', 'is_active']
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', None)

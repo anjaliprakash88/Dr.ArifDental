@@ -32,6 +32,7 @@ class SuperAdmin(models.Model):
     address = models.TextField(blank=True, null=True)
     designation = models.CharField(max_length=100, default="Clinic Administrator")
     profile_image = models.ImageField(upload_to='superadmin_images/', blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username
@@ -63,6 +64,7 @@ class Doctor(models.Model):
     medical_license = models.FileField(upload_to='DOCTOR/licenses/', null=True, blank=True)
 
     profile_image = models.ImageField(upload_to='DOCTOR/profile_images/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username
@@ -75,6 +77,7 @@ class Pharmacy(models.Model):
     qualification = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15, unique=True)
     address = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username
@@ -88,6 +91,7 @@ class Receptionist(models.Model):
     phone_number = models.CharField(max_length=15, unique=True)
     address = models.TextField(blank=True, null=True)
     profile_image = models.ImageField(upload_to='Reception/', blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username

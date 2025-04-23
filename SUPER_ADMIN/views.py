@@ -280,11 +280,11 @@ class SuperAdminDashboard(APIView):
         current_date = timezone.now()
         
         # Get counts for statistics cards
-        branches_count = Branch.objects.count()
-        doctors_count = Doctor.objects.count()
-        receptionists_count = Receptionist.objects.count()
-        medicines_count = PharmaceuticalMedicine.objects.count()
-        
+        branches_count = Branch.objects.filter(is_active=True).count()
+        doctors_count = Doctor.objects.filter(is_active=True).count()
+        receptionists_count = Receptionist.objects.filter(is_active=True).count()
+        medicines_count = PharmaceuticalMedicine.objects.filter(is_active=True).count()
+
         # Get low stock inventory items
         low_stock_items = Hospital_Inventory.objects.filter(
             quantity_in_stock__lte=models.F('reorder_level')
