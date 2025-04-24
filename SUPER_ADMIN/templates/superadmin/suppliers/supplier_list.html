@@ -247,7 +247,7 @@
       if (confirm('Are you sure you want to delete this supplier?')) {
         $.ajax({
           url: `/superadmin/suppliers/${id}/`,
-          type: 'DELETE',  // Changed from POST to DELETE
+          type: 'POST',
           headers: { 'X-CSRFToken': csrfToken },
           success: function () {
             alert('Supplier deleted successfully!');

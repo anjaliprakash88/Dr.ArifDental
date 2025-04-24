@@ -214,11 +214,11 @@ class SupplierDetailView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def post(self, request, pk):
+    def delete(self, request, pk):  
         supplier = get_object_or_404(Supplier, pk=pk)
-        supplier.is_active = False
+        supplier.is_active = False  # soft delete
         supplier.save()
-        return Response({"message": "Item deleted successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Supplier deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
 # ----------------------------Doctor Specialization------------------------------#
 def get_specializations(request):

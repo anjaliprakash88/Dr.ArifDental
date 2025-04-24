@@ -110,6 +110,7 @@ class Supplier(models.Model):
 #-----------------------------------HOSPITAL INVENTORY MODEL----------------------------------------#    
 class Hospital_Inventory(models.Model):
     supplier = models.ForeignKey(Supplier, related_name="supplier", on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, related_name="inventories", on_delete=models.CASCADE)
     item_name = models.CharField(max_length=255)
     category = models.CharField(
         max_length=100,

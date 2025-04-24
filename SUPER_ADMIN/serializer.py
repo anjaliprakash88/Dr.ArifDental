@@ -302,9 +302,13 @@ class SuperAdminUpdateSerializer(serializers.ModelSerializer):
 #----------------------Hospital Inventory Serializer--------------------------------
 class HospitalInventorySerializer(serializers.ModelSerializer):
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all(), required=True)
+    branch_name = serializers.SerializerMethodField()
     class Meta:
         model = Hospital_Inventory
         fields = '__all__'
+
+    def get_branch_name(self, obj):
+        return obj.branch.name if obj.branch else None
 
 class TaxRateSerializer(serializers.ModelSerializer):
     class Meta:
