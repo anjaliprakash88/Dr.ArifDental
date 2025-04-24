@@ -684,40 +684,43 @@ class PharmaceuticalMedicineListCreateAPIView(generics.ListCreateAPIView):
     queryset = PharmaceuticalMedicine.objects.all().filter(is_active=True)
     serializer_class = PharmaceuticalMedicineSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['medicine_name', 'batch_number', 'category']
+    search_fields = ['medicine_name', 'batch_number', 'category', 'branch__name']
     ordering_fields = ['medicine_name', 'expiry_date', 'quantity_in_stock', 'created_at']
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        
-        # Filter options
-        category = self.request.query_params.get('category', None)
-        medicine_type = self.request.query_params.get('medicine_type', None)
-        is_active = self.request.query_params.get('is_active', None)
-        is_expired = self.request.query_params.get('is_expired', None)
-        is_low_stock = self.request.query_params.get('is_low_stock', None)
-        
+
+        # Optional filters
+        branch_id = self.request.query_params.get('branch_id')
+        category = self.request.query_params.get('category')
+        medicine_type = self.request.query_params.get('medicine_type')
+        is_active = self.request.query_params.get('is_active')
+        is_expired = self.request.query_params.get('is_expired')
+        is_low_stock = self.request.query_params.get('is_low_stock')
+
+
+        if branch_id:
+            queryset = queryset.filter(branch_id=branch_id)
+
         if category:
             queryset = queryset.filter(category=category)
         if medicine_type:
             queryset = queryset.filter(medicine_type=medicine_type)
         if is_active is not None:
-            is_active_bool = is_active.lower() == 'true'
-            queryset = queryset.filter(is_active=is_active_bool)
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
         if is_expired is not None:
             from datetime import date
-            is_expired_bool = is_expired.lower() == 'true'
-            if is_expired_bool:
+            if is_expired.lower() == 'true':
                 queryset = queryset.filter(expiry_date__lt=date.today())
             else:
                 queryset = queryset.filter(expiry_date__gte=date.today())
         if is_low_stock is not None:
-            is_low_stock_bool = is_low_stock.lower() == 'true'
-            if is_low_stock_bool:
-                queryset = queryset.filter(quantity_in_stock__lte=models.F('reorder_level'))
+            from django.db.models import F
+            if is_low_stock.lower() == 'true':
+                queryset = queryset.filter(quantity_in_stock__lte=F('reorder_level'))
             else:
-                queryset = queryset.filter(quantity_in_stock__gt=models.F('reorder_level'))
-        
+                queryset = queryset.filter(quantity_in_stock__gt=F('reorder_level'))
+
         return queryset
     
 class PharmaceuticalMedicineRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

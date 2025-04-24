@@ -217,6 +217,7 @@ class PharmaceuticalMedicine(models.Model):
         ('antiseptic', 'Antiseptic'),
         ('other', 'Other'),
     ], default='other')
+    branch = models.ForeignKey('Branch', on_delete=models.CASCADE, related_name='medicines')
     batch_number = models.CharField(max_length=100, unique=True)
     quantity_in_stock = models.PositiveIntegerField(default=0)
     reorder_level = models.PositiveIntegerField(default=5, help_text="Minimum stock level before reorder.")

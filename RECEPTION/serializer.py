@@ -232,21 +232,21 @@ class HospitalInfoSerializer(serializers.Serializer):
 class PharmaceuticalMedicineSerializer(serializers.ModelSerializer):
     is_expired = serializers.BooleanField(read_only=True)
     is_low_stock = serializers.BooleanField(read_only=True)
-
+    branch_name = serializers.SerializerMethodField()
 
     class Meta:
         model = PharmaceuticalMedicine
         fields = [
             'id', 'medicine_name', 'medicine_type', 'supplier', 'category',
-            'batch_number',
-            'quantity_in_stock', 'reorder_level', 'unit_price',
-            'expiry_date', 'storage_instructions', 'is_active',
-            'created_at', 'updated_at', 'is_expired', 'is_low_stock'
+            'batch_number', 'quantity_in_stock', 'reorder_level', 'unit_price',
+            'expiry_date', 'storage_instructions', 'is_active', 'branch',
+            'created_at', 'updated_at', 'is_expired', 'is_low_stock', 'branch_name'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'is_expired', 'is_low_stock', 'branch_name']
 
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
+
 
 #BILL GENERATION
 

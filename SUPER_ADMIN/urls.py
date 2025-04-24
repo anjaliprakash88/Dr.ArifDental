@@ -20,7 +20,8 @@ from .views import (
     SuperadminProfileView,
     ChangeSuperadminPassword,
     get_specializations,
-    get_category
+    get_category,
+
 )
 
 urlpatterns = [
@@ -69,6 +70,7 @@ urlpatterns = [
     
     # Hospital information
     path('hospital-info/', HospitalInfoAPIView.as_view(), name='hospital-info'),  # Get hospital info
+    # path("medicineslist/", PharmaceuticalMedicineView.as_view(), name="medicine-list"),
 
     # Treatment prices and tax rates
     # path('treatment-prices/', TreatmentPricesAPIView.as_view(), name='treatment-prices'),  # Get treatment prices and tax rates

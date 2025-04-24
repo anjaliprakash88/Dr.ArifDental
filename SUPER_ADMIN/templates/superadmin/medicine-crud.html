@@ -6,17 +6,24 @@
     
     <div class="toolbar">
         <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search medicines...">
-            <select id="categoryFilter">
-                <option value="">All Categories</option>
-                <option value="antibiotic">Antibiotic</option>
-                <option value="analgesic">Analgesic</option>
-                <option value="antiviral">Antiviral</option>
-                <option value="antihistamine">Antihistamine</option>
-                <option value="antiseptic">Antiseptic</option>
-            </select>
-            <button onclick="searchMedicines()">Search</button>
-        </div>
+                <input type="text" id="searchInput" placeholder="Search medicines...">
+
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="antibiotic">Antibiotic</option>
+                    <option value="analgesic">Analgesic</option>
+                    <option value="antiviral">Antiviral</option>
+                    <option value="antihistamine">Antihistamine</option>
+                    <option value="antiseptic">Antiseptic</option>
+                </select>
+
+                <select id="branchFilter">
+                    <option value="">All Branches</option>
+                </select>
+
+                <button onclick="searchMedicines()">Search</button>
+            </div>
+
         <button onclick="openModal()">Add New Medicine</button>
     </div>
     
@@ -30,6 +37,7 @@
                 <th>Quantity</th>
                 <th>Unit Price (₹)</th>
                 <th>Expiry Date</th>
+                 <th>Branch</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -49,6 +57,13 @@
             <h2 id="modalTitle">Add New Medicine</h2>
             <form id="medicineForm">
                 <input type="hidden" id="medicineId">
+
+                <div class="form-group">
+                  <label for="branch">Branch*</label>
+                  <select id="branch" required>
+                    <!-- Populate dynamically -->
+                  </select>
+                </div>
                 
                 <div class="form-group">
                     <label for="medicineName">Medicine Name*</label>
@@ -287,19 +302,48 @@
         }
     }
 </style>
-
+<script src="/static/js/your-script.js"></script>
 {% block extra_js %}
 <script>
-    // Global variables
     let medicines = [];
     let currentPage = 1;
     const itemsPerPage = 10;
     let medicineToDelete = null;
 
+    function loadBranches() {
+    $.ajax({
+        url: "/superadmin/branch/",
+        method: "GET",
+        success: function (data) {
+            let formDropdown = $('#branch');
+            let filterDropdown = $('#branchFilter');
+            formDropdown.empty();
+            filterDropdown.empty();
+
+            formDropdown.append('<option value="">Select Branch</option>');
+            filterDropdown.append('<option value="">All Branches</option>');
+
+            $.each(data, function (index, branch) {
+                const option = `<option value="${branch.id}">${branch.name}</option>`;
+                formDropdown.append(option);
+                filterDropdown.append(option);
+            });
+        },
+        error: function () {
+            alert("Error fetching branches.");
+        }
+    });
+}
+
+
+    // Global variables
+
+
     // Initialize when document is ready
     document.addEventListener('DOMContentLoaded', function() {
         loadMedicines();
         loadSuppliers();
+        loadBranches();
         
         // Set up form submission handler
         document.getElementById('medicineForm').addEventListener('submit', function(e) {
@@ -382,6 +426,7 @@
                 <td>${medicine.quantity_in_stock}</td>
                 <td>${typeof medicine.unit_price === 'number' ? medicine.unit_price.toFixed(2) : medicine.unit_price}</td>
                 <td>${expiryDate}</td>
+                <td>${medicine.branch_name || '—'}</td>
                 <td class="action-buttons">
                     <button onclick="editMedicine(${medicine.id})">Edit</button>
                     <button class="delete" onclick="openDeleteModal(${medicine.id})">Delete</button>
@@ -418,24 +463,32 @@
     function searchMedicines() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const categoryFilter = document.getElementById('categoryFilter').value;
-        
-        fetch('/reception/pharmaceuticals/')
+        const branchFilter = document.getElementById('branchFilter').value;
+
+        let url = '/reception/pharmaceuticals/?';
+
+        if (searchTerm) {
+            url += `search=${encodeURIComponent(searchTerm)}&`;
+        }
+        if (categoryFilter) {
+            url += `category=${encodeURIComponent(categoryFilter)}&`;
+        }
+        if (branchFilter) {
+            url += `branch_id=${encodeURIComponent(branchFilter)}&`;
+        }
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
-                medicines = data.filter(medicine => {
-                    const matchesSearch = medicine.medicine_name.toLowerCase().includes(searchTerm) || 
-                                        medicine.batch_number.toLowerCase().includes(searchTerm);
-                    const matchesCategory = categoryFilter === '' || medicine.category === categoryFilter;
-                    
-                    return matchesSearch && matchesCategory;
-                });
-                
+                medicines = data;
                 currentPage = 1;
                 displayMedicines();
                 setupPagination();
             })
             .catch(error => console.error('Error searching medicines:', error));
     }
+
+
 
     // Open modal for adding a new medicine
     function openModal() {
@@ -460,7 +513,8 @@
     function editMedicine(id) {
         const medicine = medicines.find(m => m.id === id);
         if (!medicine) return;
-        
+
+        document.getElementById('branch').value = medicine.branch;
         document.getElementById('modalTitle').innerText = 'Edit Medicine';
         document.getElementById('medicineId').value = medicine.id;
         document.getElementById('medicineName').value = medicine.medicine_name;
@@ -485,6 +539,7 @@
         
         const medicineData = {
             medicine_name: document.getElementById('medicineName').value,
+            branch: document.getElementById('branch').value,
             medicine_type: document.getElementById('medicineType').value,
             supplier: document.getElementById('supplier').value,
             category: document.getElementById('category').value,

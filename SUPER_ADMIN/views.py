@@ -11,16 +11,12 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.utils.decorators import method_decorator
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
-from RECEPTION.models import Patient
 from django.utils import timezone
 from rest_framework import viewsets, status
 import json
 from django.db import models
-from rest_framework.exceptions import NotFound
-from rest_framework.decorators import api_view, action
 from .models import (SuperAdmin,
                      Supplier,
                      Branch,
