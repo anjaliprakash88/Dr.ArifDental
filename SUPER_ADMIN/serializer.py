@@ -5,16 +5,16 @@ from django.contrib.auth import get_user_model, authenticate
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import (
-    SuperAdmin, User,
-    Supplier, Doctor, 
-    Branch, Pharmacy,
-    Receptionist,Hospital_Inventory,
-    TaxRate, HospitalInfo,LabOrder
-
+    SuperAdmin,
+    User,
+    Supplier,
+    Doctor,
+    Branch,
+    Receptionist,
+    Hospital_Inventory,
+    LabOrder
 )
-
-
-# ----------------------------- USER SERIALIZER ----------------------------- #
+# ---------------USER SERIALIZER ---------------
 """ ONLY FOR SUPER-ADMIN """
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,15 +22,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'password', 'first_name', 'last_name', 'email', 'is_active']
         extra_kwargs = {'password': {'write_only': True}}
 
-# ----------------------------- USER SERIALIZER ----------------------------- #
-
+# ---------------USER SERIALIZER ---------------
 class UserSerializer2(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email', 'is_active']
         extra_kwargs = {'password': {'write_only': True}}
     
-# --------------------------- SUPER ADMIN SERIALIZER ------------------------- #
+# ---------------SUPER ADMIN SERIALIZER ---------------
 class SuperAdminSerializer(serializers.ModelSerializer):
     username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
@@ -67,8 +66,7 @@ class SuperAdminSerializer(serializers.ModelSerializer):
         superadmin = SuperAdmin.objects.create(user=user, **validated_data)
         return superadmin
 
-
-# ---------------------------- SUPER ADMIN LOGIN ----------------------------- #
+# ---------------SUPER ADMIN LOGIN SERIALIZER---------------
 class SuperAdminLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -82,7 +80,8 @@ class SuperAdminLoginSerializer(serializers.Serializer):
         if not user.is_superadmin:
             raise serializers.ValidationError("You are not authorized as a superadmin")
         return {'user': user}
-    
+
+# ---------------SUPER ADMIN CHANGE PASSWORD SERIALIZER---------------
 class ChangeSuperadminPasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
@@ -105,19 +104,22 @@ class ChangeSuperadminPasswordSerializer(serializers.Serializer):
         user.save()
         return user
 
-#----------------------Reception--------------------------------#
+# ---------------RECEPTION CREATE SERIALIZER---------------
 class ReceptionCreateSerializer(serializers.ModelSerializer):
-    user = UserSerializer2()
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name')
+    email = serializers.EmailField(source='user.email')
+    profile_image = serializers.ImageField(required=False, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
-    profile_image = serializers.ImageField(required=False, allow_null=True)
     is_active = serializers.BooleanField(default=True)
 
     class Meta:
         model = Receptionist
         fields = [
             'id', 'experience_years', 'qualification', 'phone_number', 'address',
-            'user', 'branch', 'branch_name', 'profile_image', 'is_active'
+            'branch', 'branch_name', 'profile_image',
+            'first_name', 'last_name', 'email', 'is_active'
         ]
 
     def get_branch_name(self, obj):
@@ -126,26 +128,24 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user_data = validated_data.pop('user', None)
 
-        password = user_data.pop('password', None)
-        if not password:
-            password = self._generate_random_password()
+        # Generate a random password and create a username
+        password = self._generate_random_password()
+        username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
 
-        username = user_data.get('username', None)
-        if not username:
-            username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
+        user_instance = get_user_model()(
+            username=username,
+            first_name=user_data['first_name'],
+            last_name=user_data['last_name'],
+            email=user_data['email'],
+            is_reception=True
+        )
 
-
-
-        user_instance = get_user_model()(**user_data)
-        user_instance.username = username
         user_instance.set_password(password)
-        user_instance.is_reception = True
         user_instance.save()
 
-        # Profile image is handled here (if provided)
+        # Create doctor profile
         profile_image = validated_data.pop('profile_image', None)
         is_active = validated_data.pop('is_active', True)
-
 
         reception_instance = Receptionist.objects.create(
             user=user_instance,
@@ -169,64 +169,19 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
     def _generate_random_password(self):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
     
-# ---------------------------- SUPPLIER SERIALIZER --------------------------- #
+# ---------------SUPPLIER CREATE SERIALIZER ---------------
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = '__all__'
 
-# ----------------------------- BRANCH SERIALIZER ---------------------------- #
+# --------------- BRANCH CREATE SERIALIZER ---------------
 class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = '__all__'
 
-
-# ----------------------------- PHARMACY SERIALIZER -------------------------- #
-class PharmacyCreateSerializer(serializers.ModelSerializer):
-    user = UserSerializer2()
-
-    class Meta:
-        model = Pharmacy
-        fields = ['id', 'experience_years', 'qualification', 'phone_number', 'address', 'user']
-    
-    def get_branch_name(self, obj):
-        return obj.branch.name if obj.branch else None
-    
-    def create(self, validated_data):
-        user_data = validated_data.pop('user', None)
-        password = user_data.pop('password', None)
-        if not password:
-            password = self._generate_random_password()
-
-        username = user_data.get('username', None)
-        if not username:
-            username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
-
-        user_instance = get_user_model()(**user_data)
-        user_instance.username = username
-        user_instance.set_password(password)
-        user_instance.is_pharmacy = True
-        user_instance.save()
-
-        pharmacy_instance = Pharmacy.objects.create(user=user_instance, **validated_data)
-        self.send_pharmacy_id_email(user_instance.email, user_instance.username, password)
-
-        return pharmacy_instance
-
-    def send_pharmacy_id_email(self, email, username, password):
-        subject = "Your Pharmacy Account Details"
-        message = f"Dear Pharmacist,\n\nYour account has been created. Here are your login details:\n\nUsername: {username}\nPassword: {password}\n\nThank you!"
-        from_email = settings.DEFAULT_FROM_EMAIL
-
-        send_mail(subject, message, from_email, [email])
-
-    def _generate_random_password(self):
-        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        return password
-
-#----------------------Doctor Serializer--------------------------------
-
+# ---------------DOCTOR CREATE SERIALIZER---------------
 class DoctorCreateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
@@ -234,6 +189,7 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(required=False, allow_null=True)
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
+    is_active = serializers.BooleanField(default=True)
 
     class Meta:
         model = Doctor
@@ -267,10 +223,12 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
 
         # Create doctor profile
         profile_image = validated_data.pop('profile_image', None)
+        is_active = validated_data.pop('is_active', True)
 
         doctor_instance = Doctor.objects.create(
             user=user_instance,
             profile_image=profile_image,
+            is_active=is_active,
             **validated_data
         )
 
@@ -293,19 +251,19 @@ class DoctorCreateSerializer(serializers.ModelSerializer):
     def _generate_random_password(self):
         return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
-    
-#---------------------------
+# ---------------USER UPDATE SERIALIZER---------------
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
 
+# ---------------SUPER ADMIN UPDATE SERIALIZER---------------
 class SuperAdminUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SuperAdmin
         fields = ['phone_number', 'address', 'designation', 'is_active']
 
-#----------------------Hospital Inventory Serializer--------------------------------
+# ---------------HOSPITAL INVENTORY SERIALIZER---------------
 class HospitalInventorySerializer(serializers.ModelSerializer):
     supplier = serializers.PrimaryKeyRelatedField(queryset=Supplier.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
@@ -316,17 +274,8 @@ class HospitalInventorySerializer(serializers.ModelSerializer):
     def get_branch_name(self, obj):
         return obj.branch.name if obj.branch else None
 
-class TaxRateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TaxRate
-        fields = '__all__'
 
-class HospitalInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HospitalInfo
-        fields = '__all__'
-
-# Serializer for User model
+# ---------------USER VIEW PROFILE SERIALIZER---------------
 class UserViewProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -359,7 +308,7 @@ class SuperadminViewProfileSerializer(serializers.ModelSerializer):
 
         return instance
 
-
+# ---------------LAB ORDER PROFILE---------------
 class LabOrderSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
     
@@ -375,3 +324,58 @@ class LabOrderSerializer(serializers.ModelSerializer):
         if obj.patient:
             return f"{obj.patient.first_name} {obj.patient.last_name}"
         return "Unknown Patient"
+
+# ---------------PHARMACY SERIALIZER ---------------
+# class PharmacyCreateSerializer(serializers.ModelSerializer):
+#     user = UserSerializer2()
+#
+#     class Meta:
+#         model = Pharmacy
+#         fields = ['id', 'experience_years', 'qualification', 'phone_number', 'address', 'user']
+#
+#     def get_branch_name(self, obj):
+#         return obj.branch.name if obj.branch else None
+#
+#     def create(self, validated_data):
+#         user_data = validated_data.pop('user', None)
+#         password = user_data.pop('password', None)
+#         if not password:
+#             password = self._generate_random_password()
+#
+#         username = user_data.get('username', None)
+#         if not username:
+#             username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
+#
+#         user_instance = get_user_model()(**user_data)
+#         user_instance.username = username
+#         user_instance.set_password(password)
+#         user_instance.is_pharmacy = True
+#         user_instance.save()
+#
+#         pharmacy_instance = Pharmacy.objects.create(user=user_instance, **validated_data)
+#         self.send_pharmacy_id_email(user_instance.email, user_instance.username, password)
+#
+#         return pharmacy_instance
+#
+#     def send_pharmacy_id_email(self, email, username, password):
+#         subject = "Your Pharmacy Account Details"
+#         message = f"Dear Pharmacist,\n\nYour account has been created. Here are your login details:\n\nUsername: {username}\nPassword: {password}\n\nThank you!"
+#         from_email = settings.DEFAULT_FROM_EMAIL
+#
+#         send_mail(subject, message, from_email, [email])
+#
+#     def _generate_random_password(self):
+#         password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+#         return password
+
+# ---------------TAX RATE SERIALIZER ---------------
+# class TaxRateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = TaxRate
+#         fields = '__all__'
+
+# ---------------HOSPITAL INFO SERIALIZER ---------------
+# class HospitalInfoSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = HospitalInfo
+#         fields = '__all__'

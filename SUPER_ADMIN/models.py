@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.conf import settings
 
-#------------------------USER MODEL-------------------------#
+# ---------------USER MODEL---------------
 class User(AbstractUser):
     is_superadmin = models.BooleanField(default=False)
     is_doctor = models.BooleanField(default=False)
@@ -13,7 +13,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
-#----------------------------BRANCH MODEL-------------------------------#
+# -----------------BRANCH MODEL---------------
 class Branch(models.Model):
     branch_code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=255)
@@ -25,7 +25,7 @@ class Branch(models.Model):
     def __str__(self):
         return self.name
 
-#----------------------------SUPER-ADMIN MODEL-------------------------------#
+# ---------------SUPER-ADMIN MODEL---------------
 class SuperAdmin(models.Model):
     user = models.OneToOneField(User, related_name="super_admin", on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15, unique=True)
@@ -37,7 +37,7 @@ class SuperAdmin(models.Model):
     def __str__(self):
         return self.user.username
 
-#-----------------------------DOCTOR MODEL-----------------------------------#
+# -----------------DOCTOR MODEL---------------
 class Doctor(models.Model):
     user = models.OneToOneField(User, related_name="doctor", on_delete=models.CASCADE)
     branch = models.ForeignKey('Branch', related_name="doctors", on_delete=models.CASCADE)
@@ -69,20 +69,7 @@ class Doctor(models.Model):
     def __str__(self):
         return self.user.username
 
-#--------------------------------------PHARMACY MODEL------------------------------------#
-class Pharmacy(models.Model):
-    user = models.OneToOneField(User, related_name="pharmacy", on_delete=models.CASCADE)
-    branch = models.ForeignKey(Branch, related_name="pharmacies", on_delete=models.CASCADE)
-    experience_years = models.PositiveIntegerField()
-    qualification = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15, unique=True)
-    address = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.user.username
-
-#-----------------------------------RECEPTIONIST MODEL----------------------------------------#
+# -----------------RECEPTIONIST MODEL---------------
 class Receptionist(models.Model):
     user = models.OneToOneField(User, related_name="receptionist", on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, related_name="receptionists", on_delete=models.CASCADE)
@@ -95,7 +82,8 @@ class Receptionist(models.Model):
 
     def __str__(self):
         return self.user.username
-#----------------------------------SUPPLIER MODEL----------------------------------------#
+
+# -----------------SUPPLIER MODEL---------------
 class Supplier(models.Model):
     name = models.CharField(max_length=255)
     contact_person = models.CharField(max_length=255, null=True, blank=True)
@@ -107,7 +95,8 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
-#-----------------------------------HOSPITAL INVENTORY MODEL----------------------------------------#    
+
+# -----------------HOSPITAL INVENTORY MODEL---------------
 class Hospital_Inventory(models.Model):
     supplier = models.ForeignKey(Supplier, related_name="supplier", on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, related_name="inventories", on_delete=models.CASCADE)
@@ -138,35 +127,7 @@ class Hospital_Inventory(models.Model):
     def __str__(self):
         return f"{self.item_name} ({self.category}) from {self.supplier.name}"
 
-#-----------------------------------HOSPITAL SERVICES MODEL----------------------------------------# 
-
-class TaxRate(models.Model):
-    cgst = models.DecimalField(max_digits=5, decimal_places=2, help_text="Central GST (%)")
-    sgst = models.DecimalField(max_digits=5, decimal_places=2, help_text="State GST (%)")
-    effective_date = models.DateField(help_text="Date from which the tax rates are applicable")
-    is_active = models.BooleanField(default=True, help_text="Set to False when rates are no longer applicable")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"CGST: {self.cgst}%, SGST: {self.sgst}% (Effective from {self.effective_date})"
-    
-class HospitalInfo(models.Model):
-    name = models.CharField(max_length=255)
-    address = models.TextField()
-    phone = models.CharField(max_length=15)
-    email = models.EmailField(unique=True)
-    website = models.URLField(blank=True, null=True)
-    established_year = models.PositiveIntegerField()
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-    
-    
+# -----------------LAB ORDER MODEL---------------
 class LabOrder(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -195,7 +156,8 @@ class LabOrder(models.Model):
         
     def __str__(self):
         return f"Order for {self.patient} - {self.lab_name} ({self.ordered_date})"
-    
+
+# -----------------PHARMACEUTICAL MEDICINE MODEL---------------
 class PharmaceuticalMedicine(models.Model):
     medicine_name = models.CharField(max_length=255)  # Required
     medicine_type = models.CharField(
@@ -244,7 +206,7 @@ class PharmaceuticalMedicine(models.Model):
     def __str__(self):
         return f"{self.medicine_name} ({self.batch_number})"
     
-
+# -----------------MEDICINE BILL MODEL---------------
 class MedicineBill(models.Model):
     bill_number = models.CharField(max_length=100, unique=True)
     patient_name = models.CharField(max_length=255)
@@ -296,7 +258,7 @@ class MedicineBill(models.Model):
     def __str__(self):
         return f"Bill #{self.bill_number} - {self.patient_name}"
 
-
+# -----------------BILL ITEM MODEL---------------
 class BillItem(models.Model):
     bill = models.ForeignKey(MedicineBill, on_delete=models.CASCADE)
     medicine = models.ForeignKey(PharmaceuticalMedicine, on_delete=models.PROTECT)
@@ -310,3 +272,44 @@ class BillItem(models.Model):
     def __str__(self):
         return f"{self.medicine.medicine_name} x {self.quantity}"
 
+#--------------------------------------PHARMACY MODEL------------------------------------#
+# class Pharmacy(models.Model):
+#     user = models.OneToOneField(User, related_name="pharmacy", on_delete=models.CASCADE)
+#     branch = models.ForeignKey(Branch, related_name="pharmacies", on_delete=models.CASCADE)
+#     experience_years = models.PositiveIntegerField()
+#     qualification = models.CharField(max_length=255)
+#     phone_number = models.CharField(max_length=15, unique=True)
+#     address = models.TextField(blank=True, null=True)
+#     is_active = models.BooleanField(default=True)
+#
+#     def __str__(self):
+#         return self.user.username
+
+# -----------------TAX RATE MODEL---------------
+# class TaxRate(models.Model):
+#     cgst = models.DecimalField(max_digits=5, decimal_places=2, help_text="Central GST (%)")
+#     sgst = models.DecimalField(max_digits=5, decimal_places=2, help_text="State GST (%)")
+#     effective_date = models.DateField(help_text="Date from which the tax rates are applicable")
+#     is_active = models.BooleanField(default=True, help_text="Set to False when rates are no longer applicable")
+#
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#
+#     def __str__(self):
+#         return f"CGST: {self.cgst}%, SGST: {self.sgst}% (Effective from {self.effective_date})"
+
+
+# -----------------HOSPITAL MODEL---------------
+# class HospitalInfo(models.Model):
+#     name = models.CharField(max_length=255)
+#     address = models.TextField()
+#     phone = models.CharField(max_length=15)
+#     email = models.EmailField(unique=True)
+#     website = models.URLField(blank=True, null=True)
+#     established_year = models.PositiveIntegerField()
+#
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#
+#     def __str__(self):
+#         return self.name

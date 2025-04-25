@@ -21,8 +21,7 @@ from .models import (SuperAdmin,
                      Supplier,
                      Branch,
                      Receptionist,
-                     Pharmacy,HospitalInfo,
-                     Doctor,TaxRate,
+                     Doctor,
                      LabOrder,
                      Hospital_Inventory,PharmaceuticalMedicine
 )
@@ -30,16 +29,11 @@ from .serializer import  (SuperAdminSerializer,
                           SuperAdminLoginSerializer,
                           ReceptionCreateSerializer,
                           BranchSerializer,SupplierSerializer,
-                          PharmacyCreateSerializer,
                           DoctorCreateSerializer,UserUpdateSerializer,
                           SuperAdminUpdateSerializer,HospitalInventorySerializer,LabOrderSerializer,
-                          SuperadminViewProfileSerializer,ChangeSuperadminPasswordSerializer,TaxRateSerializer,
-#                          TreatmentPriceSerializer, HospitalInfoSerializer,
-                        
+                          SuperadminViewProfileSerializer,ChangeSuperadminPasswordSerializer,
                           )
 from rest_framework.parsers import MultiPartParser, FormParser
-
-
 
 # -------------------------- Super Admin Registration --------------------------#
 class SuperAdmin_Signup(APIView):
@@ -177,7 +171,7 @@ class BranchDetailView(APIView):
 # -------------------------- Supplier CRUD --------------------------#
 class SupplierView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    template_name = 'superadmin/suppliers/supplier_list.html'
+    template_name = 'superadmin/supplier_list.html'
 
     def get(self, request):
         suppliers = Supplier.objects.filter(is_active=True)
@@ -197,7 +191,7 @@ class SupplierView(APIView):
 
 class SupplierDetailView(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    template_name = 'superadmin/suppliers/supplier_list.html'
+    template_name = 'superadmin/supplier_list.html'
 
     def get(self, request, pk):
         supplier = get_object_or_404(Supplier, pk=pk)

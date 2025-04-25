@@ -402,16 +402,32 @@
             // Logout option in dropdown - use the existing jQuery AJAX setup
             document.getElementById("drarift-logout-dropdown").addEventListener("click", function(e) {
                 e.preventDefault();
-                
-                // Reuse the existing logout function
+
                 var confirmLogout = confirm("Are you sure you want to log out?");
                 if (confirmLogout) {
-                    // Use the existing jQuery for AJAX to maintain compatibility
+                    // Get CSRF token from cookies
+                    function getCookie(name) {
+                        let cookieValue = null;
+                        if (document.cookie && document.cookie !== "") {
+                            const cookies = document.cookie.split(";");
+                            for (let i = 0; i < cookies.length; i++) {
+                                const cookie = cookies[i].trim();
+                                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                    break;
+                                }
+                            }
+                        }
+                        return cookieValue;
+                    }
+
+                    const csrftoken = getCookie('csrftoken');
+
                     $.ajax({
                         url: "/reception/logout/",
                         type: "POST",
-                        data: {
-                            csrfmiddlewaretoken: '{{ csrf_token }}',
+                        headers: {
+                            'X-CSRFToken': csrftoken  // ✅ Correct way to include CSRF token
                         },
                         success: function(response) {
                             window.location.href = "/reception/login/";
@@ -423,6 +439,7 @@
                     });
                 }
             });
+
             
         })(); // End of IIFE
     </script>
