@@ -100,20 +100,17 @@ class ReceptionLoginSerializer(serializers.Serializer):
         username = data.get("username")
         password = data.get("password")
 
-        # Check if user exists
-        if not User.objects.filter(username=username).exists():
-            raise serializers.ValidationError({"username": "Username does not exist."})
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid credentials")
 
-        # Authenticate user
-        user = authenticate(username=username, password=password)
-        if not user:
-            raise serializers.ValidationError({"password": "Incorrect password."})
 
-        # Check if user is a receptionist
         if not hasattr(user, 'is_reception') or not user.is_reception:
-            raise serializers.ValidationError({"authorization": "You are not authorized as a receptionist."})
+            raise serializers.ValidationError("You are not authorized as a receptionist")
 
         return {'user': user}
+
 
 #---------------ReceptionUpdateSerializer---------------
 class UserUpdateSerializer(serializers.ModelSerializer):

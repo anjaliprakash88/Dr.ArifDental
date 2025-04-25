@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+from rest_framework.parsers import JSONParser, FormParser
 from datetime import timedelta
 from decimal import Decimal
 from rest_framework.pagination import PageNumberPagination
@@ -159,6 +159,7 @@ class PatientDetailView(APIView):
 class ReceptionLoginView(APIView):
     permission_classes = [AllowAny]
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    parser_classes = [JSONParser, FormParser]
     template_name = 'reception/reception_login.html'
 
     def get(self, request):

@@ -290,57 +290,51 @@
         <path fill="#B0E0E6" opacity="0.1" d="M0,100 C15,85 35,80 55,60 C75,40 95,50 115,80 L115,100 Z"></path>
     </svg>
     <script>
+$(document).ready(function () {
+    $('#ReceptionistloginForm').on('submit', function (e) {
+        e.preventDefault();
 
-        $(document).ready(function() {
-            $('#ReceptionistloginForm').on('submit', function(e) {
-                e.preventDefault();
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
-                // Reset previous errors
-                $(".error").text("");
-                
-                const data = {
-                    username: $('#model-username').val(),
-                    password: $('#model-password').val(),
-                };
+        const data = {
+            username: $('#model-username').val(),
+            password: $('#model-password').val()
+        };
+        // Log to confirm data being sent
 
-                // Show loader before sending AJAX request
-                $('#loader').css('display', 'flex');
-
-                $.ajax({
-                    url:`/reception/login/`,
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    headers: {
-                        'X-CSRFToken': csrftoken
-                    },
-                })
-                .done(function(response) {
-                    // Hide loader
-                    $('#loader').css('display', 'none');
-                    alert('Reception Login successful');
-                    window.location.href = '/reception/dashboard/';
-                })
-                .fail(function(xhr) {
-                    // Hide loader
-                    $('#loader').css('display', 'none');
-                    
-                    const errors = xhr.responseJSON?.errors || {};
-                    
-                    if (errors.username) {
-                        $('#emailError').text(errors.username);
-                    }
-                    if (errors.password) {
-                        $('#passwordError').text(errors.password);
-                    }
-                    if (errors.authorization) {
-                        alert(errors.authorization);
-                    }
-                });
-            });
+        $.ajax({
+            url: '/reception/login/',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json'
+            },
+        })
+        .done(function(response) {
+            $('#loader').css('display', 'none');
+            alert('Reception Login successful');
+            window.location.href = '/reception/dashboard/';
+        })
+        .fail(function(xhr) {
+            $('#loader').css('display', 'none');
+            const errors = xhr.responseJSON?.errors || {};
+            console.log("Errors: ", errors);  // Log to confirm response errors
+            if (errors.username) {
+                $('#emailError').text(errors.username);
+            }
+            if (errors.password) {
+                $('#passwordError').text(errors.password);
+            }
+            if (errors.authorization) {
+                alert(errors.authorization);
+            }
         });
+
+    });
+});
+
     </script>
 </body>
 </html>

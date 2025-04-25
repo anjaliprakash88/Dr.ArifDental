@@ -111,6 +111,7 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
     branch = serializers.PrimaryKeyRelatedField(queryset=Branch.objects.all(), required=True)
     branch_name = serializers.SerializerMethodField()
     profile_image = serializers.ImageField(required=False, allow_null=True)
+    is_active = serializers.BooleanField(default=True)
 
     class Meta:
         model = Receptionist
@@ -133,6 +134,8 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
         if not username:
             username = f"{user_data['first_name'].lower()}_{user_data['last_name'].lower()}"
 
+
+
         user_instance = get_user_model()(**user_data)
         user_instance.username = username
         user_instance.set_password(password)
@@ -141,10 +144,13 @@ class ReceptionCreateSerializer(serializers.ModelSerializer):
 
         # Profile image is handled here (if provided)
         profile_image = validated_data.pop('profile_image', None)
+        is_active = validated_data.pop('is_active', True)
+
 
         reception_instance = Receptionist.objects.create(
             user=user_instance,
             profile_image=profile_image,
+            is_active=is_active,
             **validated_data
         )
 
