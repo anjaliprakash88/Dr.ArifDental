@@ -448,12 +448,12 @@
             <form id="inventoryForm">
                 {% csrf_token %}
                 <div class="row g-4">
-                    <div class="col-md-12">
-                        <label for="itemName" class="form-label">Item Name</label>
+                    <div class="col-md-6">
+                        <label for="itemName" class="form-label fw-bold">Item Name</label>
                         <input type="text" class="form-control" id="itemName" value="{{ inventory_item.item_name }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="branch" class="form-label">Branch</label>
+                        <label for="branch" class="form-label fw-bold">Branch</label>
                         <select class="form-select" id="branch" required>
                             <option value="{{ inventory_item.branch.id }}" selected>{{ inventory_item.branch.name }}</option>
                         </select>
@@ -462,13 +462,13 @@
 
                 <div class="row g-4 mt-3">
                     <div class="col-md-6">
-                        <label for="category" class="form-label">Category</label>
+                        <label for="category" class="form-label fw-bold">Category</label>
                         <select class="form-select" id="category" required>
                             <option value="{{ inventory_item.category }}" selected>{{ inventory_item.category }}</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="quantity" class="form-label">Quantity in Stock</label>
+                        <label for="quantity" class="form-label fw-bold">Quantity in Stock</label>
                         <div class="input-group">
                             <input type="number" class="form-control" id="quantity" value="{{ inventory_item.quantity_in_stock }}" required>
                             <span class="input-group-text">units</span>
@@ -478,11 +478,11 @@
 
                 <div class="row g-4 mt-3">
                     <div class="col-md-6">
-                        <label for="reorderLevel" class="form-label">Reorder Level</label>
+                        <label for="reorderLevel" class="form-label fw-bold">Reorder Level</label>
                         <input type="number" class="form-control" id="reorderLevel" value="{{ inventory_item.reorder_level }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label for="unitPrice" class="form-label">Unit Price</label>
+                        <label for="unitPrice" class="form-label fw-bold">Unit Price</label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
                             <input type="number" step="0.01" class="form-control" id="unitPrice" value="{{ inventory_item.unit_price }}" required>
@@ -492,25 +492,25 @@
 
                 <div class="row g-4 mt-3">
                     <div class="col-md-6">
-                        <label for="lastOrderDate" class="form-label">Last Order Date</label>
+                        <label for="lastOrderDate" class="form-label fw-bold">Last Order Date</label>
                         <input type="date" class="form-control" id="lastOrderDate" value="{{ inventory_item.last_order_date }}">
                     </div>
                     <div class="col-md-6">
-                        <label for="expiryDate" class="form-label">Expiry Date</label>
+                        <label for="expiryDate" class="form-label fw-bold">Expiry Date</label>
                         <input type="date" class="form-control" id="expiryDate" value="{{ inventory_item.expiry_date }}">
                     </div>
                 </div>
 
                 <div class="row g-4 mt-3">
                     <div class="col-md-6">
-                        <label for="supplier" class="form-label">Supplier</label>
+                        <label for="supplier" class="form-label fw-bold">Supplier</label>
                         <select class="form-select" id="supplier" required>
                             <option value="{{ inventory_item.supplier.id }}" selected>{{ inventory_item.supplier.name }}</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" rows="3">{{ inventory_item.description }}</textarea>
+                        <label for="description" class="form-label fw-bold">Description</label>
+                        <textarea class="form-control" id="description" rows="1">{{ inventory_item.description }}</textarea>
                     </div>
                 </div>
 
@@ -535,109 +535,11 @@
     </footer>
 
     <script>
-        function getCSRFToken() {
-            return document.cookie.split('; ')
-                .find(row => row.startsWith('csrftoken='))
-                ?.split('=')[1];
-        }
-        const csrfToken = document.querySelector('[name=csrf-token]').content;
-
-        document.getElementById('toggle-btn').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('overlay').classList.toggle('active');
-        });
-
-        document.getElementById('overlay').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.remove('active');
-            document.getElementById('overlay').classList.remove('active');
-        });
-
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                document.getElementById('sidebar').classList.remove('active');
-                document.getElementById('overlay').classList.remove('active');
-            }
-        });
-
-        // Active menu item functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const menuItems = document.querySelectorAll('.menu-item');
-
-            menuItems.forEach(item => {
-                const link = item.querySelector('a');
-                if (link && link.getAttribute('href')) {
-                    const href = link.getAttribute('href').replace(/^\/|\/$/g, '');
-                    const path = currentPath.replace(/^\/|\/$/g, '');
-
-                    if (path === href || path.startsWith(href + '/')) {
-                        item.classList.add('active');
-                    }
-                }
-            });
-        });
-        document.addEventListener('DOMContentLoaded', function() {
-            const profileToggle = document.getElementById('profile-toggle');
-            const profileDropdown = document.getElementById('profile-dropdown');
-
-            // Toggle dropdown when profile icon is clicked
-            profileToggle.addEventListener('click', function(e) {
-                profileDropdown.classList.toggle('show');
-                e.stopPropagation();
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
-                    profileDropdown.classList.remove('show');
-                }
-            });
-        });
-    </script>
-    <script>
-        // Profile dropdown toggle
-        document.getElementById("drarift-profile-toggle").addEventListener("click", function(e) {
-            document.getElementById("drarift-profile-dropdown").classList.toggle("show");
-            e.stopPropagation();
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener("click", function(e) {
-            var toggle = document.getElementById("drarift-profile-toggle");
-            var dropdown = document.getElementById("drarift-profile-dropdown");
-
-            if (toggle !== e.target && !toggle.contains(e.target) && dropdown !== e.target && !dropdown.contains(e.target)) {
-                dropdown.classList.remove("show");
-            }
-        });
-
-        // Logout functionality
-        document.getElementById("drarift-logout-dropdown").addEventListener("click", function(e) {
-            e.preventDefault();
-
-            $.ajax({
-                url: "/superadmin/logout/",
-                type: "POST",
-                headers: {
-                    "X-CSRFToken": getCSRFToken()
-                },
-                success: function(response) {
-                    alert("Logged out successfully!");
-                    window.location.href = "/superadmin/login/";
-                },
-                error: function(xhr) {
-                    alert("Error logging out: " + xhr.responseText);
-                }
-            });
-        });
-
-    </script>
- <script>
       document.addEventListener("DOMContentLoaded", function () {
     const itemId = "{{ inventory_item.id }}";
     const selectedCategory = "{{ inventory_item.category }}";
-    const selectedSupplier = "{{ inventory_item.supplier.id }}";
-    const selectedBranch = "{{ inventory_item.branch.id }}";
+    const selectedSupplier = "{{ inventory_item.supplier }}";
+    const selectedBranch = "{{ inventory_item.branch }}";
 
     // Load Categories
     $.ajax({
@@ -746,5 +648,105 @@
             });
         });
  </script>
+
+    <script>
+        function getCSRFToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+        }
+        const csrfToken = document.querySelector('[name=csrf-token]').content;
+
+        document.getElementById('toggle-btn').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        });
+
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        });
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('overlay').classList.remove('active');
+            }
+        });
+
+        // Active menu item functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.menu-item');
+
+            menuItems.forEach(item => {
+                const link = item.querySelector('a');
+                if (link && link.getAttribute('href')) {
+                    const href = link.getAttribute('href').replace(/^\/|\/$/g, '');
+                    const path = currentPath.replace(/^\/|\/$/g, '');
+
+                    if (path === href || path.startsWith(href + '/')) {
+                        item.classList.add('active');
+                    }
+                }
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileToggle = document.getElementById('profile-toggle');
+            const profileDropdown = document.getElementById('profile-dropdown');
+
+            // Toggle dropdown when profile icon is clicked
+            profileToggle.addEventListener('click', function(e) {
+                profileDropdown.classList.toggle('show');
+                e.stopPropagation();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+        });
+    </script>
+    <script>
+        // Profile dropdown toggle
+        document.getElementById("drarift-profile-toggle").addEventListener("click", function(e) {
+            document.getElementById("drarift-profile-dropdown").classList.toggle("show");
+            e.stopPropagation();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            var toggle = document.getElementById("drarift-profile-toggle");
+            var dropdown = document.getElementById("drarift-profile-dropdown");
+
+            if (toggle !== e.target && !toggle.contains(e.target) && dropdown !== e.target && !dropdown.contains(e.target)) {
+                dropdown.classList.remove("show");
+            }
+        });
+
+        // Logout functionality
+        document.getElementById("drarift-logout-dropdown").addEventListener("click", function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: "/superadmin/logout/",
+                type: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken()
+                },
+                success: function(response) {
+                    alert("Logged out successfully!");
+                    window.location.href = "/superadmin/login/";
+                },
+                error: function(xhr) {
+                    alert("Error logging out: " + xhr.responseText);
+                }
+            });
+        });
+
+    </script>
+
 </body>
 </html>
