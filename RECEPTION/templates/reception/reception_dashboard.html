@@ -182,7 +182,7 @@
 
 <div class="container-fluid" id="dashboard-container" style="display: none;">
     <!-- Welcome & Quick Stats -->
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-md-12">
             <h3 id="welcome-message">Welcome</h3>
             <p class="text-muted" id="today-date"></p>
@@ -191,7 +191,7 @@
     
     <!-- Quick Stats Row -->
     <div class="row">
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="dashboard-card">
                 <div class="dashboard-card-header">
                     <h5 class="dashboard-card-title">Today's Appointments</h5>
@@ -202,18 +202,11 @@
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="dashboard-card">
-                <div class="dashboard-card-header">
-                    <h5 class="dashboard-card-title">New Enquiries</h5>
-                    <i class="fas fa-question-circle dashboard-card-icon"></i>
-                </div>
-                <div class="dashboard-stat" id="new-enquiries-count">0</div>
-                <div class="dashboard-stat-label">Unprocessed enquiries waiting for action</div>
-            </div>
-        </div>
+<!--        <div class="col-xl-3 col-md-6 mb-4">-->
+<!--&lt;!&ndash;            textContent&ndash;&gt;-->
+<!--        </div>-->
         
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="dashboard-card">
                 <div class="dashboard-card-header">
                     <h5 class="dashboard-card-title">Low Stock Medicines</h5>
@@ -224,7 +217,7 @@
             </div>
         </div>
         
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
             <div class="dashboard-card">
                 <div class="dashboard-card-header">
                     <h5 class="dashboard-card-title">Active Patients</h5>
@@ -268,19 +261,19 @@
         </div>
         
         <!-- Recent Enquiries -->
-        <div class="col-md-4">
-            <div class="dashboard-card">
-                <div class="dashboard-card-header">
-                    <h5 class="dashboard-card-title">Recent Enquiries</h5>
-                    <i class="fas fa-headset dashboard-card-icon"></i>
-                </div>
-                <div class="list-group" id="enquiries-list">
-                    <!-- Enquiries will be loaded here dynamically -->
-                    <div id="no-enquiries-row" class="list-group-item">No recent enquiries.</div>
-                </div>
-                <a href="/reception/enquiries/" class="view-all-link">View All Enquiries</a>
-            </div>
-        </div>
+<!--        <div class="col-md-4">-->
+<!--            <div class="dashboard-card">-->
+<!--                <div class="dashboard-card-header">-->
+<!--                    <h5 class="dashboard-card-title">Recent Enquiries</h5>-->
+<!--                    <i class="fas fa-headset dashboard-card-icon"></i>-->
+<!--                </div>-->
+<!--                <div class="list-group" id="enquiries-list">-->
+<!--                    &lt;!&ndash; Enquiries will be loaded here dynamically &ndash;&gt;-->
+<!--                    <div id="no-enquiries-row" class="list-group-item">No recent enquiries.</div>-->
+<!--                </div>-->
+<!--                <a href="/reception/enquiries/" class="view-all-link">View All Enquiries</a>-->
+<!--            </div>-->
+<!--        </div>-->
     </div>
     
     <!-- Inventory & Quick Actions -->
@@ -400,7 +393,7 @@ function displayDashboardData(data) {
     
     // Update stats
     document.getElementById('today-appointments-count').textContent = data.today_appointments_count;
-    document.getElementById('new-enquiries-count').textContent = data.new_enquiries_count;
+<!--    document.getElementById('new-enquiries-count').textContent = data.new_enquiries_count;-->
     document.getElementById('low-stock-count').textContent = data.low_stock_count;
     document.getElementById('active-patients-count').textContent = data.active_patients_count;
     
@@ -408,7 +401,7 @@ function displayDashboardData(data) {
     updateAppointmentsTable(data.today_appointments);
     
     // Update enquiries list
-    updateEnquiriesList(data.recent_enquiries);
+<!--    updateEnquiriesList(data.recent_enquiries);-->
     
     // Update medicines table
     updateMedicinesTable(data.low_stock_medicines);
@@ -444,47 +437,47 @@ function updateAppointmentsTable(appointments) {
     }
 }
 
-function updateEnquiriesList(enquiries) {
-    const enquiriesList = document.getElementById('enquiries-list');
-    const noEnquiriesRow = document.getElementById('no-enquiries-row');
-    
-    // Clear previous content
-    enquiriesList.innerHTML = '';
-    
-    if (enquiries && enquiries.length > 0) {
-        enquiries.forEach(enquiry => {
-            const listItem = document.createElement('div');
-            listItem.className = 'list-group-item list-group-item-action';
-            
-            let preferredDateTimeHTML = '';
-            if (enquiry.preferred_date) {
-                preferredDateTimeHTML = `${enquiry.preferred_date}`;
-                if (enquiry.preferred_time) {
-                    preferredDateTimeHTML += ` at ${enquiry.preferred_time}`;
-                }
-            } else {
-                preferredDateTimeHTML = 'No date preference';
-            }
-            
-            listItem.innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">${enquiry.patient_name}</h6>
-                    <span class="status-badge status-${enquiry.status}">${enquiry.status_display}</span>
-                </div>
-                <small class="text-muted">
-                    <i class="fas fa-phone me-1"></i> ${enquiry.contact_number}
-                </small><br>
-                <small class="text-muted">
-                    <i class="fas fa-calendar me-1"></i> ${preferredDateTimeHTML}
-                </small>
-            `;
-            
-            enquiriesList.appendChild(listItem);
-        });
-    } else {
-        enquiriesList.appendChild(noEnquiriesRow);
-    }
-}
+<!--function updateEnquiriesList(enquiries) {-->
+<!--    const enquiriesList = document.getElementById('enquiries-list');-->
+<!--    const noEnquiriesRow = document.getElementById('no-enquiries-row');-->
+
+<!--    // Clear previous content-->
+<!--    enquiriesList.innerHTML = '';-->
+
+<!--    if (enquiries && enquiries.length > 0) {-->
+<!--        enquiries.forEach(enquiry => {-->
+<!--            const listItem = document.createElement('div');-->
+<!--            listItem.className = 'list-group-item list-group-item-action';-->
+
+<!--            let preferredDateTimeHTML = '';-->
+<!--            if (enquiry.preferred_date) {-->
+<!--                preferredDateTimeHTML = `${enquiry.preferred_date}`;-->
+<!--                if (enquiry.preferred_time) {-->
+<!--                    preferredDateTimeHTML += ` at ${enquiry.preferred_time}`;-->
+<!--                }-->
+<!--            } else {-->
+<!--                preferredDateTimeHTML = 'No date preference';-->
+<!--            }-->
+
+<!--            listItem.innerHTML = `-->
+<!--                <div class="d-flex w-100 justify-content-between">-->
+<!--                    <h6 class="mb-1">${enquiry.patient_name}</h6>-->
+<!--                    <span class="status-badge status-${enquiry.status}">${enquiry.status_display}</span>-->
+<!--                </div>-->
+<!--                <small class="text-muted">-->
+<!--                    <i class="fas fa-phone me-1"></i> ${enquiry.contact_number}-->
+<!--                </small><br>-->
+<!--                <small class="text-muted">-->
+<!--                    <i class="fas fa-calendar me-1"></i> ${preferredDateTimeHTML}-->
+<!--                </small>-->
+<!--            `;-->
+
+<!--            enquiriesList.appendChild(listItem);-->
+<!--        });-->
+<!--    } else {-->
+<!--        enquiriesList.appendChild(noEnquiriesRow);-->
+<!--    }-->
+<!--}-->
 
 function updateMedicinesTable(medicines) {
     const tableBody = document.getElementById('medicines-table-body');
