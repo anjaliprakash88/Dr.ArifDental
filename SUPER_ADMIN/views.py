@@ -56,7 +56,6 @@ class SuperAdmin_Signup(APIView):
 # --------------------------Doctor CREATION---------------------------------
 class DoctorCreate(APIView):
     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    #template_name = 'superadmin/profilecreation/doctor_profile_creation.html'
     template_name = 'superadmin/doctors_list.html'
 
     def get(self, request):
@@ -65,6 +64,24 @@ class DoctorCreate(APIView):
         return Response({"serializer":serializer.data}, status=status.HTTP_200_OK)
     def post(self, request):
         serializer = DoctorCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Validation errors:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# --------------------------RECEPTION CREATION---------------------------------
+class ReceptionCreate(APIView):
+    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+    parser_classes = [MultiPartParser, FormParser]
+    template_name = 'superadmin/receptionists_list.html'
+
+    def get(self, request):
+        reception_data = Receptionist.objects.all()
+        serializer = ReceptionCreateSerializer(reception_data, many=True)
+        return Response({"serializer":serializer.data}, status=status.HTTP_200_OK)
+    def post(self, request):
+        serializer = ReceptionCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -92,42 +109,10 @@ class SuperAdminLoginView(APIView):
         return Response({"message": "Invalid credentials", 'serializer': serializer, 'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
 
-# --------------------------PHARMACY CREATION---------------------------------
-class PharmacyCreate(APIView):
-    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    # template_name = 'superadmin/profilecreation/pharmacy_profile_creation.html'
-    template_name = 'superadmin/pharmacists_list.html'
-
-    def get(self, request):
-        pharmacies = Pharmacy.objects.all()
-        serializer = PharmacyCreateSerializer(pharmacies, many=True)
-        return Response({"serializer": serializer.data}, status=status.HTTP_200_OK)
-    def post(self, request):
-        serializer = PharmacyCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Validation errors:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# --------------------------RECEPTION CREATION---------------------------------
-class ReceptionCreate(APIView):
-    renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
-    parser_classes = [MultiPartParser, FormParser]
-    template_name = 'superadmin/receptionists_list.html'
 
-    def get(self, request):
-        reception_data = Receptionist.objects.all()
-        serializer = ReceptionCreateSerializer(reception_data, many=True)
-        return Response({"serializer":serializer.data}, status=status.HTTP_200_OK)
-    def post(self, request):
-        serializer = ReceptionCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Validation errors:", serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # -------------------------- Branch Creation --------------------------#
 class BranchCreate(APIView):
@@ -488,38 +473,10 @@ class DeleteInventoryItemView(APIView):
 #---------------------------Hospital_Inventory_Dashboard_CRUD--------------------#
 
 # Tax Rate Views
-class TaxRateListCreateView(APIView):
-    def get(self, request):
-        tax_rates = TaxRate.objects.all()
-        serializer = TaxRateSerializer(tax_rates, many=True)
-        return Response({'tax_rates': serializer.data})
-
-    def post(self, request):
-        serializer = TaxRateSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
 
 
-class TaxRateRetrieveUpdateDeleteView(APIView):
-    def get(self, request, pk):
-        tax_rate = get_object_or_404(TaxRate, pk=pk)
-        serializer = TaxRateSerializer(tax_rate)
-        return Response({'tax_rate': serializer.data})
 
-    def put(self, request, pk):
-        tax_rate = get_object_or_404(TaxRate, pk=pk)
-        serializer = TaxRateSerializer(tax_rate, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
 
-    def delete(self, request, pk):
-        tax_rate = get_object_or_404(TaxRate, pk=pk)
-        tax_rate.delete()
-        return Response(status=204)
 
 class HospitalInfoAPIView(APIView):
     def get(self, request):
@@ -600,3 +557,53 @@ class PatientLabOrdersView(APIView):
         return Response(serializer.data)
 
 
+# --------------------------PHARMACY CREATION---------------------------------
+# class PharmacyCreate(APIView):
+#     renderer_classes = [TemplateHTMLRenderer, JSONRenderer]
+#     # template_name = 'superadmin/profilecreation/pharmacy_profile_creation.html'
+#     template_name = 'superadmin/pharmacists_list.html'
+#
+#     def get(self, request):
+#         pharmacies = Pharmacy.objects.all()
+#         serializer = PharmacyCreateSerializer(pharmacies, many=True)
+#         return Response({"serializer": serializer.data}, status=status.HTTP_200_OK)
+#     def post(self, request):
+#         serializer = PharmacyCreateSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         print("Validation errors:", serializer.errors)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class TaxRateListCreateView(APIView):
+#     def get(self, request):
+#         tax_rates = TaxRate.objects.all()
+#         serializer = TaxRateSerializer(tax_rates, many=True)
+#         return Response({'tax_rates': serializer.data})
+#
+#     def post(self, request):
+#         serializer = TaxRateSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=201)
+#         return Response(serializer.errors, status=400)
+
+# class TaxRateRetrieveUpdateDeleteView(APIView):
+#     def get(self, request, pk):
+#         tax_rate = get_object_or_404(TaxRate, pk=pk)
+#         serializer = TaxRateSerializer(tax_rate)
+#         return Response({'tax_rate': serializer.data})
+#
+#     def put(self, request, pk):
+#         tax_rate = get_object_or_404(TaxRate, pk=pk)
+#         serializer = TaxRateSerializer(tax_rate, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=400)
+#
+#     def delete(self, request, pk):
+#         tax_rate = get_object_or_404(TaxRate, pk=pk)
+#         tax_rate.delete()
+#         return Response(status=204)

@@ -7,13 +7,9 @@ from .views import (
     SupplierDetailView,
     BranchCreate,
     BranchDetailView,
-    BranchDetailView,
-    PharmacyCreate,
     ReceptionCreate,SuperAdmin_Signup,DoctorCreate,
-    SuperAdminDashboard,LogoutView,TaxRateListCreateView, TaxRateRetrieveUpdateDeleteView,
+    SuperAdminDashboard,LogoutView,
     LabOrderListView,LabOrderDetailView,PatientLabOrdersView,HospitalInfoAPIView,
-    # TreatmentPriceListCreateView, TreatmentPriceRetrieveUpdateDeleteView,
-    # HospitalInfoListCreateView, HospitalInfoRetrieveUpdateDeleteView,
     HospitalInventory,
     HospitalInventoryItem,
     DeleteInventoryItemView,
@@ -21,7 +17,6 @@ from .views import (
     ChangeSuperadminPassword,
     get_specializations,
     get_category,
-
 )
 
 urlpatterns = [
@@ -45,18 +40,8 @@ urlpatterns = [
     path('branch/', BranchCreate.as_view(), name='branchCreate'), 
     path('branch/<int:pk>/', BranchDetailView.as_view(), name='branchdetailview'),   
     path('specializations/', get_specializations, name='specializations'),
-    path('pharmacy-create/', PharmacyCreate.as_view(), name='pharmacy-Create'),
     path('reception-create/', ReceptionCreate.as_view(), name='receptionCreate'),
     path('doctor-create/', DoctorCreate.as_view(), name='Doctor-Create'),
-
-    path('tax-rates/', TaxRateListCreateView.as_view(), name='tax-rate-list-create'),
-    path('tax-rates/<int:pk>/', TaxRateRetrieveUpdateDeleteView.as_view(), name='tax-rate-detail'),
-
-    # path('treatment-prices/', TreatmentPriceListCreateView.as_view(), name='treatment-price-list-create'),
-    # path('treatment-prices/<int:pk>/', TreatmentPriceRetrieveUpdateDeleteView.as_view(), name='treatment-price-detail'),
-
-    # path('hospital-info/', HospitalInfoListCreateView.as_view(), name='hospital-info-list-create'),
-    # path('hospital-info/<int:pk>/', HospitalInfoRetrieveUpdateDeleteView.as_view(), name='hospital-info-detail'),
 
     # Dashboard  URLs
     path('superadmindashboard/', SuperAdminDashboard.as_view(), name='superadmindashboard'),
@@ -67,17 +52,23 @@ urlpatterns = [
     path('lab-orders/<int:pk>/', LabOrderDetailView.as_view(), name='lab-order-detail'),
     path('patients/<int:patient_id>/lab-orders/', PatientLabOrdersView.as_view(), name='patient-lab-orders'),
 
-    
     # Hospital information
     path('hospital-info/', HospitalInfoAPIView.as_view(), name='hospital-info'),  # Get hospital info
-    # path("medicineslist/", PharmaceuticalMedicineView.as_view(), name="medicine-list"),
 
     # Treatment prices and tax rates
-    # path('treatment-prices/', TreatmentPricesAPIView.as_view(), name='treatment-prices'),  # Get treatment prices and tax rates
     path('medicineslist/', TemplateView.as_view(template_name="superadmin/medicine-crud.html"), name='medicine-list'),
     path('laborders/', TemplateView.as_view(template_name="superadmin/labtracking.html"), name='lab-orders'),
     path('hospital-data/', TemplateView.as_view(template_name="superadmin/hospital_info.html"), name='hospital-data'),
     path('manage-branch/', TemplateView.as_view(template_name="superadmin/branch_creation.html"), name='manage-branch'),
+
+    # path('pharmacy-create/', PharmacyCreate.as_view(), name='pharmacy-Create'),
+    # path('treatment-prices/', TreatmentPricesAPIView.as_view(), name='treatment-prices'),
+    # path('tax-rates/', TaxRateListCreateView.as_view(), name='tax-rate-list-create'),
+    # path('tax-rates/<int:pk>/', TaxRateRetrieveUpdateDeleteView.as_view(), name='tax-rate-detail'),
+    # path('treatment-prices/', TreatmentPriceListCreateView.as_view(), name='treatment-price-list-create'),
+    # path('treatment-prices/<int:pk>/', TreatmentPriceRetrieveUpdateDeleteView.as_view(), name='treatment-price-detail'),
+    # path('hospital-info/', HospitalInfoListCreateView.as_view(), name='hospital-info-list-create'),
+    # path('hospital-info/<int:pk>/', HospitalInfoRetrieveUpdateDeleteView.as_view(), name='hospital-info-detail'),
 
 ]
 

@@ -420,7 +420,7 @@ $(document).ready(function () {
                     if (row.first_name && row.last_name) {
                         return `<span class="toggle-indicator">▶</span> ${row.first_name} ${row.last_name}`;
                     } else {
-                        return "<span class='toggle-indicator'>▶</span> Unknown";  // Fallback to "Unknown"
+                        return "<span class='toggle-indicator'>▶</span> Unknown";
                     }
                 }
             },
@@ -472,8 +472,13 @@ $(document).ready(function () {
 
     // Detail formatting function
     function formatDoctorDetails(d) {
+        const imageHTML = d.profile_image
+            ? `<img src="${d.profile_image}" alt="Profile Image" width="100" height="100" style="border-radius: 10px;">`
+            : `<span class="text-muted">No profile image uploaded</span>`;
+
         return `
             <div class="doctor-details" style="display: flex; gap: 2rem;">
+                <div>${imageHTML}</div>
                 <div style="flex: 1;">
                     <div class="detail-row">
                         <div class="detail-label">Email:</div>
